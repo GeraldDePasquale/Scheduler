@@ -4,7 +4,7 @@ from datetime import datetime, date, timedelta, time
 
 class Common:
     def __init__(self):
-
+    #test
     #define days consistent with datetime.weekday()
     self.mon = 0
     self.tue = 1
