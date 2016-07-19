@@ -1,4 +1,3 @@
-#test
 # Mathnasium Staffing Forecast
 #   Forecasts instructor staffing requirements for scheduling purposes.
 #   It forecasts based upon a student arrival-departure event model.
