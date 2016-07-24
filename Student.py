@@ -32,8 +32,8 @@ class Student:
 
     def cost(self):
         if self.grade in []:
-            return self.lowCost
+            return self.highCost
         elif self.grade in ['3', '4', '5','6', '7', '8']:
-            return self.mediumCost
+            return self.highCost
         elif self.grade in ['','K', '1', '2', '9','10','11','12','13', 'U']:
             return self.highCost
