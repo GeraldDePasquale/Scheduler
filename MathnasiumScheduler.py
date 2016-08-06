@@ -64,9 +64,15 @@ def main():
     instructorDataFile = open(instructorDataFileName)
     print("\t", instructorDataFileName)
 
+    #Open Instructor Schedule File
+    i = datetime.now()
+    prefix = i.strftime('%Y%m%d%H%M%S')
+    instructorScheduleFileName = "C:\\Users\\Gerald\\Downloads\\Scheduling\\Instructor Schedule."+prefix+".csv"
+    instructorScheduleFile = open(instructorScheduleFileName, 'w')
+
     #Open Log File
     logFileName = "C:\\Users\\Gerald\\Downloads\\Scheduling\\Forecast Warnings.csv"
-    logFile = open(logFileName, 'w')
+    logFile = open(logFileName,'w')
     print("\t", logFileName)
 
     print("Creating students from Attendance Report\n")
@@ -254,7 +260,6 @@ def main():
         detailedForecastFile.write(str(each))
 
     # Write Instructor Schedules
-    instructorScheduleFile = open('C:\\Users\\Gerald\\Downloads\\Scheduling\\Instructor Schedule.csv', 'w')
     instructorScheduleFile.write("Instructor Name," + "Day," + "Start Time," + "Stop Time\n")
     for eachInstructor in instructors:
         for eachDay in eachInstructor.schedule.keys():
