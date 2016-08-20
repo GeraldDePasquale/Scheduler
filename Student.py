@@ -1,4 +1,4 @@
-from Scheduler import ParserGenerator
+import ParserGenerator
 from datetime import datetime, date, timedelta
 from ParserGenerator import ParserGenerator
 

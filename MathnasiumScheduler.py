@@ -37,7 +37,13 @@ import csv
 import time
 from datetime import datetime, date, timedelta
 import math
-from Scheduler import ParserGenerator, Instructor, Event, Student
+#from Scheduler \
+import ParserGenerator, Instructor, Event, Student
+from ParserGenerator import ParserGenerator
+from Instructor import Instructor
+from Event import Event
+from Student import Student
+
 from tkinter import Tk, filedialog
 
 
@@ -51,14 +57,14 @@ def main():
     FILEOPENOPTIONS = dict(defaultextension='.csv', filetypes=[('CSV file', '*.csv')])
 
     #Open Attendance File
-    dirAttendance = "C:\\Users\\Gerald\\Downloads\\Scheduling"
+    dirAttendance = "C:\\Users\\Jerry\\Downloads\\Scheduler"
     attendanceReportFileName = filedialog.askopenfilename(parent=root, initialdir=dirAttendance,
                                                           title='Select Student Attendance File', **FILEOPENOPTIONS)
     attendanceReportFile = open(attendanceReportFileName)
     print("\t", attendanceReportFileName)
 
     #Open Instructor File
-    dirInstructors = "C:\\Users\\Gerald\\Downloads\\Scheduling\\Instructor Data"
+    dirInstructors = "C:\\Users\\Jerry\\Downloads\\Scheduler\\Instructor Data"
     instructorDataFileName = filedialog.askopenfilename(parent=root, initialdir=dirInstructors,
                                                         title='Select Instructor Data File', **FILEOPENOPTIONS)
     instructorDataFile = open(instructorDataFileName)
@@ -67,11 +73,11 @@ def main():
     #Open Instructor Schedule File
     i = datetime.now()
     prefix = i.strftime('%Y%m%d%H%M%S')
-    instructorScheduleFileName = "C:\\Users\\Gerald\\Downloads\\Scheduling\\Instructor Schedule."+prefix+".csv"
+    instructorScheduleFileName = "C:\\Users\\Jerry\\Downloads\\Scheduler\\Instructor Schedule."+prefix+".csv"
     instructorScheduleFile = open(instructorScheduleFileName, 'w')
 
     #Open Log File
-    logFileName = "C:\\Users\\Gerald\\Downloads\\Scheduling\\Forecast Warnings.csv"
+    logFileName = "C:\\Users\\Jerry\\Downloads\\Scheduler\\Forecast Warnings.csv"
     logFile = open(logFileName,'w')
     print("\t", logFileName)
 
@@ -246,8 +252,8 @@ def main():
     print("\t C:\\Users\\Gerald\\Downloads\\Scheduling\\Instructor Forecast - Detailed.csv")
     print("\t C:\\Users\\Gerald\Downloads\\Scheduling\\Instructor Schedule.csv\n")
     # Write Attendance Forecasts
-    summaryForecastFile = open('C:\\Users\\Gerald\\Downloads\\Scheduling\\Instructor Forecast - Summary.csv', 'w')
-    detailedForecastFile = open('C:\\Users\\Gerald\\Downloads\\Scheduling\\Instructor Forecast - Detailed.csv', 'w')
+    summaryForecastFile = open('C:\\Users\\Jerry\\Downloads\\Scheduler\\Instructor Forecast - Summary.csv', 'w')
+    detailedForecastFile = open('C:\\Users\\Jerry\\Downloads\\Scheduler\\Instructor Forecast - Detailed.csv', 'w')
     summaryForecastFile.write(
         str('Event #,Student Name,Grade,Event,Time,Day,Student Count,Student:Instructor,Instructors Required\n'))
     detailedForecastFile.write(
