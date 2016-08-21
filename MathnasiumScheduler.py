@@ -33,6 +33,7 @@
 #       Default: 6 minutes per hour.
 
 
+import os.path
 import csv
 import time
 from datetime import datetime, date, timedelta
@@ -57,15 +58,14 @@ def main():
     FILEOPENOPTIONS = dict(defaultextension='.csv', filetypes=[('CSV file', '*.csv')])
 
     #Open Attendance File
-    dirAttendance = "C:\\Users\\Jerry\\Downloads\\Scheduler"
-    attendanceReportFileName = filedialog.askopenfilename(parent=root, initialdir=dirAttendance,
+    directory = "C:\\ProgramData\\MathnasiumScheduler"
+    attendanceReportFileName = filedialog.askopenfilename(parent=root, initialdir=directory,
                                                           title='Select Student Attendance File', **FILEOPENOPTIONS)
     attendanceReportFile = open(attendanceReportFileName)
     print("\t", attendanceReportFileName)
 
     #Open Instructor File
-    dirInstructors = "C:\\Users\\Jerry\\Downloads\\Scheduler\\Instructor Data"
-    instructorDataFileName = filedialog.askopenfilename(parent=root, initialdir=dirInstructors,
+    instructorDataFileName = filedialog.askopenfilename(parent=root, initialdir=directory,
                                                         title='Select Instructor Data File', **FILEOPENOPTIONS)
     instructorDataFile = open(instructorDataFileName)
     print("\t", instructorDataFileName)
@@ -73,11 +73,14 @@ def main():
     #Open Instructor Schedule File
     i = datetime.now()
     prefix = i.strftime('%Y%m%d%H%M%S')
-    instructorScheduleFileName = "C:\\Users\\Jerry\\Downloads\\Scheduler\\Instructor Schedule."+prefix+".csv"
+    instructorScheduleFileName = directory+"\\Instructor Schedule."+prefix+".csv"
     instructorScheduleFile = open(instructorScheduleFileName, 'w')
 
     #Open Log File
-    logFileName = "C:\\Users\\Jerry\\Downloads\\Scheduler\\Forecast Warnings.csv"
+    directoryWarnings=directory+"\\Warnings"
+    if not os.path.exists(directoryWarnings):
+        os.makedirs(directoryWarnings)
+    logFileName = directoryWarnings+"\\Forecast Warnings.csv"
     logFile = open(logFileName,'w')
     print("\t", logFileName)
 
@@ -252,8 +255,8 @@ def main():
     print("\t C:\\Users\\Gerald\\Downloads\\Scheduling\\Instructor Forecast - Detailed.csv")
     print("\t C:\\Users\\Gerald\Downloads\\Scheduling\\Instructor Schedule.csv\n")
     # Write Attendance Forecasts
-    summaryForecastFile = open('C:\\Users\\Jerry\\Downloads\\Scheduler\\Instructor Forecast - Summary.csv', 'w')
-    detailedForecastFile = open('C:\\Users\\Jerry\\Downloads\\Scheduler\\Instructor Forecast - Detailed.csv', 'w')
+    summaryForecastFile = open(directory+'\\Instructor Forecast - Summary.csv', 'w')
+    detailedForecastFile = open(directory+'\\Instructor Forecast - Detailed.csv', 'w')
     summaryForecastFile.write(
         str('Event #,Student Name,Grade,Event,Time,Day,Student Count,Student:Instructor,Instructors Required\n'))
     detailedForecastFile.write(
