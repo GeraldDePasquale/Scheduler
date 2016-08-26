@@ -33,19 +33,18 @@
 #       Default: 6 minutes per hour.
 
 
-import os.path
 import csv
-import time
-from datetime import datetime, date, timedelta
 import math
-#from Scheduler \
-import ParserGenerator, Instructor, Event, Student
-from ParserGenerator import ParserGenerator
-from Instructor import Instructor
-from Event import Event
-from Student import Student
-
+import os.path
+from datetime import datetime
 from tkinter import Tk, filedialog
+
+import Event
+import Instructor
+import Student
+from Event import Event
+from Instructor import Instructor
+from Student import Student
 
 
 def main():
