@@ -160,6 +160,8 @@ class Instructor:
             if self.schedule[eachKey]:
                 myStartTime = max(self.schedule[eachKey][0],self.availability[eachKey][0])
                 myStopTime = min(self.availability[eachKey][1],self.schedule[eachKey][len(self.schedule[eachKey])-1])
+                #Bug fix: If no stop work ordered, stop work at end of day. Better way: check for non-existence of stop work
+                if myStopTime == myStartTime: myStopTime = self.instructionHours[eachKey][1]
                 self.schedule[eachKey] = [myStartTime,myStopTime]
 #                if len(self.schedule[eachKey])%2 != 0:
 #                    self.schedule[eachKey] = [myStartTime, myStopTime]
