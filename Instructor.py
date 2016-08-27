@@ -20,10 +20,10 @@ class Instructor:
 
         # define instruction hours
         self.instructionHours = {sun: [], \
-                                 mon: [time(15, 30), time(17, 30)], \
-                                 tue: [time(15, 30), time(17, 30)], \
-                                 wed: [time(15, 30), time(17, 30)], \
-                                 thu: [time(15, 30), time(17, 30)], \
+                                 mon: [time(15, 30), time(19, 30)], \
+                                 tue: [time(15, 30), time(19, 30)], \
+                                 wed: [time(15, 30), time(19, 30)], \
+                                 thu: [time(15, 30), time(19, 30)], \
                                  fri: [], \
                                  sat: [time(10, 00), time(14, 00)]}
 
