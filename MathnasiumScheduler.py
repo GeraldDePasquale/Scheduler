@@ -63,6 +63,8 @@ def main():
     attendanceReportFile = open(attendanceReportFileName)
     print("\t", attendanceReportFileName)
 
+    #Instructor Plugin Modification
+
     #Open Instructor File
     instructorDataFileName = filedialog.askopenfilename(parent=root, initialdir=directory,
                                                         title='Select Instructor Data File', **FILEOPENOPTIONS)
@@ -141,6 +143,7 @@ def main():
         print("\n\tProcessing Day: ", str(eachDay))
         eventgroups[eachDay].sort()
         instructorsMinimum = 2.0  # the minimum staffing level
+#        instructorsMinimum = 0.0  # the minimum staffing level
         instructorsRequired = 0.0  # actual number of instructors required to meet student demand
         eventnumber = 1  # first event number
         studentcount = 0  # start with zero students
