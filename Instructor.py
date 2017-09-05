@@ -60,7 +60,7 @@ class Instructor:
         # set min hours per day
         self.minHrsPerDay = int(csvObj[18])
 
-        # sef work day preferences
+        # set work day preferences
         self.workDayPreferences = {sun: int(csvObj[19]), mon: int(csvObj[20]), tue: int(csvObj[21]), \
                                    wed: int(csvObj[22]), thu: int(csvObj[23]), fri: int(csvObj[24]), \
                                    sat: int(csvObj[25])}

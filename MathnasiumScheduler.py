@@ -27,7 +27,7 @@
 #       The number of seconds per hour that will be tolerated to minimize
 #       churn and avoid overstaffing due to students arrivals and departures.
 #       For instance, if we need desire to maintain a 1:3 instructor:student
-#       ratio and we are we have 10:31, how long will we tolerate it before
+#       ratio and we have 10:31, how long will we tolerate it before
 #       we bring in another instructor. Due to student churn, that ratio may
 #       return to 10:30 in a matter of minutes. How many minutes are tolerable?
 #       Default: 6 minutes per hour.
@@ -67,7 +67,7 @@ def main():
 
     #Open Instructor File
     instructorDataFileName = filedialog.askopenfilename(parent=root, initialdir=directory,
-                                                        title='Select Instructor Data File', **FILEOPENOPTIONS)
+                                                        title='Select Instructor Availability File', **FILEOPENOPTIONS)
     instructorDataFile = open(instructorDataFileName)
     print("\t", instructorDataFileName)
 
@@ -106,6 +106,7 @@ def main():
             # Get instructorName, day, earliest start time, latest stop time
             anInstructor = Instructor(line)
             instructors.append(anInstructor)
+    for eachInstructor in instructors: print(eachInstructor.name)
 
     print("Creating events from student arrivals and departures\n")
     events = []
@@ -213,8 +214,10 @@ def main():
             instructorChangeNeeded = eachEvent.instructorCount - len(scheduledInstructors)
             if not eachEvent.isChurnEvent and instructorChangeNeeded > 0:
                 # Schedule available instructors
+                print("\t\t\tSchedule Instructor")
                 countScheduled = 0
                 unscheduledInstructors.sort()
+                print("Unscheduled Instructors: " + str(len(unscheduledInstructors)))
                 while (countScheduled < instructorChangeNeeded):
                     # Find instructor and schedule instructor
                     instructorsChanged = []
@@ -230,6 +233,7 @@ def main():
 
             if not eachEvent.isChurnEvent and instructorChangeNeeded < 0:
                 # Unschedule instructors
+                print("\t\t\tUnschedule Instructor")
                 countUnscheduled = 0
                 instructorsChanged = []
                 unscheduledInstructors.sort()
