@@ -57,7 +57,7 @@ def main():
     FILEOPENOPTIONS = dict(defaultextension='.csv', filetypes=[('CSV file', '*.csv')])
 
     #Open Attendance File
-    directory = "C:\\ProgramData\\MathnasiumScheduler"
+    directory = "C:\\PythonProjects\\Scheduler2\\SchedulerData"
     attendanceReportFileName = filedialog.askopenfilename(parent=root, initialdir=directory,
                                                           title='Select Student Attendance File', **FILEOPENOPTIONS)
     attendanceReportFile = open(attendanceReportFileName)
