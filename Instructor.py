@@ -152,6 +152,13 @@ class Instructor:
     # hoursScheduled returns the number of hours the employee is scheduled to work
     #    def hoursScheduledNow(self,event):
 
+    # adjust time to land on the hour or half hour
+    def adjustTime(self, aTime):
+        if aTime.minute < 30:
+            return time(aTime.hour,0)
+        elif aTime.minute > 30:
+            return time(aTime.hour,30)
+        return aTime
 
     # finalizeSchedule modifies the schedule so that each work day includes one start and one stop time
     def finalizeSchedule(self):
@@ -161,9 +168,5 @@ class Instructor:
                 myStopTime = min(self.availability[eachKey][1],self.schedule[eachKey][len(self.schedule[eachKey])-1])
                 #Bug fix: If no stop work ordered, stop work at end of day. Better way: check for non-existence of stop work
                 if myStopTime == myStartTime: myStopTime = self.instructionHours[eachKey][1]
-                self.schedule[eachKey] = [myStartTime,myStopTime]
-#                if len(self.schedule[eachKey])%2 != 0:
-#                    self.schedule[eachKey] = [myStartTime, myStopTime]
-#                else:
-#                    self.schedule[eachKey] = [myStartTime, self.schedule[eachKey][len(self.schedule[eachKey])-1]]
+                self.schedule[eachKey] = [self.adjustTime(myStartTime), self.adjustTime(myStopTime)]
         return self.schedule

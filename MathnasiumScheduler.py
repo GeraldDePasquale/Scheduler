@@ -37,7 +37,7 @@ import csv
 import math
 import os.path
 from datetime import datetime
-from tkinter import Tk, filedialog
+from tkinter import Tk, filedialog, simpledialog
 
 import Event
 import Instructor
@@ -55,6 +55,8 @@ def main():
     print("Opening......\n")
 
     FILEOPENOPTIONS = dict(defaultextension='.csv', filetypes=[('CSV file', '*.csv')])
+    #Get Center Name
+    centerName = simpledialog.askstring("Name prompt", "Enter Center Name")
 
     #Open Attendance File
     directory = "C:\\ProgramData\\MathnasiumScheduler"
@@ -73,8 +75,8 @@ def main():
 
     #Open Instructor Schedule File
     i = datetime.now()
-    prefix = i.strftime('%Y%m%d%H%M%S')
-    instructorScheduleFileName = directory+"\\Instructor Schedule."+prefix+".csv"
+    prefix = i.strftime('%Y%m%d')
+    instructorScheduleFileName = directory+"\\"+centerName+" Instructor Schedule."+prefix+".csv"
     instructorScheduleFile = open(instructorScheduleFileName, 'w')
 
     #Open Log File
