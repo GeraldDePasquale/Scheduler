@@ -59,7 +59,7 @@ def main():
     centerName = simpledialog.askstring("Name prompt", "Enter Center Name")
 
     #Open Attendance File
-    directory = "C:\\PythonProjects\\Scheduler2\\SchedulerData"
+    directory = "C:\\ProgramData\\MathnasiumScheduler"
     attendanceReportFileName = filedialog.askopenfilename(parent=root, initialdir=directory,
                                                           title='Select Student Attendance File', **FILEOPENOPTIONS)
     attendanceReportFile = open(attendanceReportFileName)
