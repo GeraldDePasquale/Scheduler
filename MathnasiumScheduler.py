@@ -37,6 +37,7 @@ import csv
 import math
 import os.path
 from datetime import datetime
+
 from tkinter import Tk, filedialog, simpledialog
 
 import Event
@@ -51,7 +52,6 @@ def main():
     root = Tk()
 
     print("Starting ...... MathnasiumScheduler.py")
-    print("Opening......\n")
     print("Opening......\n")
 
     FILEOPENOPTIONS = dict(defaultextension='.csv', filetypes=[('CSV file', '*.csv')])
@@ -68,14 +68,13 @@ def main():
     #Instructor Plugin Modification
 
     #Open Instructor File
-    instructorDataFileName = filedialog.askopenfilename(parent=root, initialdir=directory,
+    instructorAvailabilityFileName = filedialog.askopenfilename(parent=root, initialdir=directory,
                                                         title='Select Instructor Availability File', **FILEOPENOPTIONS)
-    instructorDataFile = open(instructorDataFileName)
-    print("\t", instructorDataFileName)
+    instructorAvailabilityFile = open(instructorAvailabilityFileName)
+    print("\t", instructorAvailabilityFileName)
 
     #Open Instructor Schedule File
-    i = datetime.now()
-    prefix = i.strftime('%Y%m%d')
+    prefix = datetime.now().strftime('%Y%m%d%H%M%S')
     instructorScheduleFileName = directory+"\\"+centerName+" Instructor Schedule."+prefix+".csv"
     instructorScheduleFile = open(instructorScheduleFileName, 'w')
 
@@ -100,7 +99,7 @@ def main():
     print("Creating instructors from Instructor Availability\n")
     instructors = []
     isFirstLine = True
-    for line in csv.reader(instructorDataFile):
+    for line in csv.reader(instructorAvailabilityFile):
         if line[0] == '': break  # quit when we reach the first blank line
         if isFirstLine:
             isFirstLine = False  # ignore the header line
@@ -259,12 +258,12 @@ def main():
                 for i in unscheduledInstructors: i.finalizeSchedule()
 
     print("\n Writing ......")
-    print("\t C:\\Users\\Gerald\\Downloads\\Scheduling\\Instructor Forecast - Summary.csv")
-    print("\t C:\\Users\\Gerald\\Downloads\\Scheduling\\Instructor Forecast - Detailed.csv")
-    print("\t C:\\Users\\Gerald\Downloads\\Scheduling\\Instructor Schedule.csv\n")
+    print("\t C:\\Users\\Gerald\\Downloads\\Scheduling\\"+centerName+" Instructor Forecast - Summary.csv")
+    print("\t C:\\Users\\Gerald\\Downloads\\Scheduling\\"+centerName+" Instructor Forecast - Detailed.csv")
+    print("\t C:\\Users\\Gerald\Downloads\\Scheduling\\"+centerName+" Instructor Schedule.csv\n")
     # Write Attendance Forecasts
-    summaryForecastFile = open(directory+'\\Instructor Forecast - Summary.csv', 'w')
-    detailedForecastFile = open(directory+'\\Instructor Forecast - Detailed.csv', 'w')
+    summaryForecastFile = open(directory+'\\'+centerName+' Instructor Forecast - Summary.csv', 'w')
+    detailedForecastFile = open(directory+'\\'+centerName+' Instructor Forecast - Detailed.csv', 'w')
     summaryForecastFile.write(
         str('Event #,Student Name,Grade,Event,Time,Day,Student Count,Student:Instructor,Instructors Required\n'))
     detailedForecastFile.write(
@@ -286,7 +285,7 @@ def main():
                                              + str(eachInstructor.schedule[eachDay][1]) + "\n")
     print("Closing all files\n")
     attendanceReportFile.close()
-    instructorDataFile.close()
+    instructorAvailabilityFile.close()
     summaryForecastFile.close()
     detailedForecastFile.close()
     instructorScheduleFile.close()
