@@ -37,37 +37,53 @@ import csv
 import math
 import os.path
 from datetime import datetime
-
 from tkinter import Tk, filedialog, simpledialog
-
+from openpyxl import workbook, worksheet, load_workbook
 import Event
 import Instructor
-import Student
+import Student_from_Row
 from Event import Event
 from Instructor import Instructor
-from Student import Student
-
+from Student_from_Row import Student_from_Row
 
 def main():
+
+    wb = load_workbook('C:\\ProgramData\\MathnasiumScheduler\\RadiusAttendance.xlsx', data_only=True, guess_types=True)
+    ws = wb.active
+    wb.create_sheet("Types", 0)
+    wsTypes = wb['Types']
+    print(wb.sheetnames)
+    rowNum = 0
+    wsTypesRowNum = -1
+    for row in ws.iter_rows(min_row=1, max_col=13, max_row=2):
+        rowNum = rowNum + 1
+        wsTypesRowNum = wsTypesRowNum + 2
+        colNum = 0
+        for cell in row:
+            colNum = colNum + 1
+            wsTypes.cell(row=wsTypesRowNum, column=colNum).value = cell.value
+            wsTypes.cell(row=wsTypesRowNum + 1, column=colNum).value = str(type(cell.value))
+    wb.save('C:\\ProgramData\\MathnasiumScheduler\\AAAARadiusAttendanceTypes.xlsx')
+    wb.close()
+
     root = Tk()
 
     print("Starting ...... MathnasiumScheduler.py")
     print("Opening......\n")
 
-    FILEOPENOPTIONS = dict(defaultextension='.csv', filetypes=[('CSV file', '*.csv')])
+    FILEOPENOPTIONS = dict(defaultextension='.csv', filetypes=[('CSV file', '*.csv'), ('XLSX', '*.xlsx')])
     #Get Center Name
     centerName = simpledialog.askstring("Name prompt", "Enter Center Name")
 
     #Open Attendance File
     directory = "C:\\ProgramData\\MathnasiumScheduler"
-    attendanceReportFileName = filedialog.askopenfilename(parent=root, initialdir=directory,
-                                                          title='Select Student Attendance File', **FILEOPENOPTIONS)
-    attendanceReportFile = open(attendanceReportFileName)
-    print("\t", attendanceReportFileName)
+    student_attendance_report_file = filedialog.askopenfilename(parent=root, initialdir=directory,
+                                                          title='Select Student Attendance Report', **FILEOPENOPTIONS)
+#    attendanceReportFile = open(attendanceReportFileName)
+    student_attendance_report = load_workbook(student_attendance_report_file, data_only=True, guess_types=True)
+    print("\t", student_attendance_report_file)
 
-    #Instructor Plugin Modification
-
-    #Open Instructor File
+     #Open Instructor File
     instructorAvailabilityFileName = filedialog.askopenfilename(parent=root, initialdir=directory,
                                                         title='Select Instructor Availability File', **FILEOPENOPTIONS)
     instructorAvailabilityFile = open(instructorAvailabilityFileName)
@@ -86,15 +102,14 @@ def main():
     logFile = open(logFileName,'w')
     print("\t", logFileName)
 
-    print("Creating students from Attendance Report\n")
+    print("Creating students from Student Attendance Report\n")
     students = []
-    isFirstLine = True
-    for line in csv.reader(attendanceReportFile):
-        if (not line) or (line[0] == ""): break  # quit when we reach the first blank line
-        if isFirstLine:
-            isFirstLine = False  # ignore the header line
-        else:
-            students.append(Student(line, logFile))
+    student_ws = student_attendance_report.active
+    first_row = 2 #skip the headers
+    last_row = student_ws.max_row
+    last_col = student_ws.max_column
+    for row in student_ws.iter_rows(min_row = first_row, max_col = last_col, max_row=last_row):
+        students.append(Student_from_Row(row,logFile))
 
     print("Creating instructors from Instructor Availability\n")
     instructors = []
@@ -145,7 +160,6 @@ def main():
         print("\n\tProcessing Day: ", str(eachDay))
         eventgroups[eachDay].sort()
         instructorsMinimum = 2.0  # the minimum staffing level
-#        instructorsMinimum = 0.0  # the minimum staffing level
         instructorsRequired = 0.0  # actual number of instructors required to meet student demand
         eventnumber = 1  # first event number
         studentcount = 0  # start with zero students
@@ -284,7 +298,7 @@ def main():
                                              + str(eachInstructor.schedule[eachDay][0]) + "," \
                                              + str(eachInstructor.schedule[eachDay][1]) + "\n")
     print("Closing all files\n")
-    attendanceReportFile.close()
+    student_attendance_report.close()
     instructorAvailabilityFile.close()
     summaryForecastFile.close()
     detailedForecastFile.close()

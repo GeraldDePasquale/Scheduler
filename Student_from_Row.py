@@ -3,7 +3,7 @@ from datetime import datetime, date, timedelta
 from ParserGenerator import ParserGenerator
 
 
-class Student:
+class Student_from_Row:
     """A Mathnasium Student class"""
     lowCost = 1 / 5  # 1 to 5 student ratio (Grades 2 .. 5)
     mediumCost = 1 / 4  # 1 to 4 student ratio (Grades 6 .. 8)
@@ -11,27 +11,21 @@ class Student:
     veryHighCost = 1 / 1  # Private Lesson
     sessionTime = 1  # hour
 
-    def __init__(self, line, logFile):
-        # Get name, grade, arrival, departure strings
-        self.name = line[0]  # first and last name
+    def __init__(self, row, logFile):
+        self.name = row[1].value + ' ' + row[2].value
         try:
             # get datetime when student arrives at center
-            self.arrivalTime = ParserGenerator().pgDatetime(line[2], logFile)
+            self.arrivalTime = ParserGenerator().arrival_time_from_row(row, logFile)
         except:
-            logFile.write(line + ',' + 'Invalid Arrival Time: ' + line[2] + '\n')
+            logFile.write(str(row) + '\n')
         try:
             # get datetime when student departs from center
-            self.departureTime = ParserGenerator().pgDatetime(line[3], logFile)
+            self.departureTime = ParserGenerator().departure_time_from_row(row, logFile)
         except:
             # if the departure time is absent (empty string) set departure to arrival time + session time
             self.departureTime = self.arrivalTime + timedelta(hours=self.sessionTime)
-        # Adjust session start and stop time if necessary
-
-        if line[1] not in ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']:
-            logFile.write(str(self.name) + ',' + str(self.arrivalTime) + ',' + 'No Grade\n')
-            self.grade = 'U'  # undefined
-        else:
-            self.grade = self.grade = line[1]
+            # Adjust session start and stop time if necessary
+        self.grade = 'U'
 
     def __lt__(self, other):
         return self.arrivalTime < other.arrivalTime
