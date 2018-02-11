@@ -40,10 +40,9 @@ from datetime import datetime
 from tkinter import Tk, filedialog, simpledialog
 from openpyxl import workbook, worksheet, load_workbook
 import Event
-import Instructor
 import Student
 from Event import Event
-from Instructor_from_Row import Instructor_from_Row
+from Instructor import Instructor
 from Student import Student
 
 def main():
@@ -73,7 +72,7 @@ def main():
     logFile = open(logFileName, 'w')
     print("Opened ", logFileName)
 
-    Instructor_from_Row.initialize(logFile)
+    Instructor.initialize(logFile)
 
     #Open Instructor Schedule File
     prefix = datetime.now().strftime('%Y%m%d%H%M%S')
@@ -167,7 +166,7 @@ def main():
                                  and (nextEvent.eventTime - event.eventTime).seconds < tolerance
 
         print("\t\tScheduling Instructors")
-        instructors = Instructor_from_Row.instructors
+        instructors = Instructor.instructors
         instructors.sort()
         unscheduledInstructors = instructors
         scheduledInstructors = []
