@@ -3,7 +3,7 @@ from datetime import datetime, date, timedelta
 from ParserGenerator import ParserGenerator
 
 
-class Student_from_Row:
+class Student:
     """A Mathnasium Student class"""
     lowCost = 1 / 5  # 1 to 5 student ratio (Grades 2 .. 5)
     mediumCost = 1 / 4  # 1 to 4 student ratio (Grades 6 .. 8)

@@ -41,10 +41,10 @@ from tkinter import Tk, filedialog, simpledialog
 from openpyxl import workbook, worksheet, load_workbook
 import Event
 import Instructor
-import Student_from_Row
+import Student
 from Event import Event
 from Instructor_from_Row import Instructor_from_Row
-from Student_from_Row import Student_from_Row
+from Student import Student
 
 def main():
 
@@ -89,7 +89,7 @@ def main():
     last_row = student_ws.max_row
     last_col = student_ws.max_column
     for row in student_ws.iter_rows(min_row = first_row, max_col = last_col, max_row=last_row):
-        students.append(Student_from_Row(row,logFile))
+        students.append(Student(row,logFile))
 
     #Create Events
     print("Creating events from student arrivals and departures\n")
