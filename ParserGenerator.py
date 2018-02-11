@@ -1,6 +1,5 @@
 from datetime import datetime
 
-
 class ParserGenerator:
 
     def pgDatetime(self, parseString, logFile):

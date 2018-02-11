@@ -43,35 +43,18 @@ import Event
 import Instructor
 import Student_from_Row
 from Event import Event
-from Instructor import Instructor
+from Instructor_from_Row import Instructor_from_Row
 from Student_from_Row import Student_from_Row
 
 def main():
 
-    wb = load_workbook('C:\\ProgramData\\MathnasiumScheduler\\RadiusAttendance.xlsx', data_only=True, guess_types=True)
-    ws = wb.active
-    wb.create_sheet("Types", 0)
-    wsTypes = wb['Types']
-    print(wb.sheetnames)
-    rowNum = 0
-    wsTypesRowNum = -1
-    for row in ws.iter_rows(min_row=1, max_col=13, max_row=2):
-        rowNum = rowNum + 1
-        wsTypesRowNum = wsTypesRowNum + 2
-        colNum = 0
-        for cell in row:
-            colNum = colNum + 1
-            wsTypes.cell(row=wsTypesRowNum, column=colNum).value = cell.value
-            wsTypes.cell(row=wsTypesRowNum + 1, column=colNum).value = str(type(cell.value))
-    wb.save('C:\\ProgramData\\MathnasiumScheduler\\AAAARadiusAttendanceTypes.xlsx')
-    wb.close()
-
     root = Tk()
 
-    print("Starting ...... MathnasiumScheduler.py")
-    print("Opening......\n")
+    print("MathnasiumScheduler Starts")
 
-    FILEOPENOPTIONS = dict(defaultextension='.csv', filetypes=[('CSV file', '*.csv'), ('XLSX', '*.xlsx')])
+    directory = "C:\\ProgramData\\MathnasiumScheduler"
+    FILEOPENOPTIONS = dict(defaultextension='.csv', filetypes=[('XLSX', '*.xlsx'), ('CSV file', '*.csv')])
+
     #Get Center Name
     centerName = simpledialog.askstring("Name prompt", "Enter Center Name")
 
@@ -79,51 +62,36 @@ def main():
     directory = "C:\\ProgramData\\MathnasiumScheduler"
     student_attendance_report_file = filedialog.askopenfilename(parent=root, initialdir=directory,
                                                           title='Select Student Attendance Report', **FILEOPENOPTIONS)
-#    attendanceReportFile = open(attendanceReportFileName)
-    student_attendance_report = load_workbook(student_attendance_report_file, data_only=True, guess_types=True)
-    print("\t", student_attendance_report_file)
+    student_attendance_wb = load_workbook(student_attendance_report_file, data_only=True, guess_types=True)
+    print("Opened", student_attendance_report_file)
 
-     #Open Instructor File
-    instructorAvailabilityFileName = filedialog.askopenfilename(parent=root, initialdir=directory,
-                                                        title='Select Instructor Availability File', **FILEOPENOPTIONS)
-    instructorAvailabilityFile = open(instructorAvailabilityFileName)
-    print("\t", instructorAvailabilityFileName)
+    # Open Log File
+    directoryWarnings = directory + "\\Warnings"
+    if not os.path.exists(directoryWarnings):
+        os.makedirs(directoryWarnings)
+    logFileName = directoryWarnings + "\\Forecast Warnings.csv"
+    logFile = open(logFileName, 'w')
+    print("Opened ", logFileName)
+
+    Instructor_from_Row.initialize(logFile)
 
     #Open Instructor Schedule File
     prefix = datetime.now().strftime('%Y%m%d%H%M%S')
     instructorScheduleFileName = directory+"\\"+centerName+" Instructor Schedule."+prefix+".csv"
     instructorScheduleFile = open(instructorScheduleFileName, 'w')
+    print("Opened ", instructorScheduleFileName)
 
-    #Open Log File
-    directoryWarnings=directory+"\\Warnings"
-    if not os.path.exists(directoryWarnings):
-        os.makedirs(directoryWarnings)
-    logFileName = directoryWarnings+"\\Forecast Warnings.csv"
-    logFile = open(logFileName,'w')
-    print("\t", logFileName)
-
+    #Create Students
     print("Creating students from Student Attendance Report\n")
     students = []
-    student_ws = student_attendance_report.active
+    student_ws = student_attendance_wb.active
     first_row = 2 #skip the headers
     last_row = student_ws.max_row
     last_col = student_ws.max_column
     for row in student_ws.iter_rows(min_row = first_row, max_col = last_col, max_row=last_row):
         students.append(Student_from_Row(row,logFile))
 
-    print("Creating instructors from Instructor Availability\n")
-    instructors = []
-    isFirstLine = True
-    for line in csv.reader(instructorAvailabilityFile):
-        if line[0] == '': break  # quit when we reach the first blank line
-        if isFirstLine:
-            isFirstLine = False  # ignore the header line
-        else:
-            # Get instructorName, day, earliest start time, latest stop time
-            anInstructor = Instructor(line)
-            instructors.append(anInstructor)
-    for eachInstructor in instructors: print(eachInstructor.name)
-
+    #Create Events
     print("Creating events from student arrivals and departures\n")
     events = []
     for eachStudent in students:
@@ -131,9 +99,10 @@ def main():
         events.append(Event('Departure', eachStudent.departureTime, eachStudent))
     events.sort()
 
+    #Executing Events
     print("Executing events and collecting information")
     # Gather events by week day
-    # define days consistent with datetime.weekday()
+    # define days consistent with datetime.weekday() - - - there has to be a better way than this
     mon = 0
     tue = 1
     wed = 2
@@ -147,13 +116,14 @@ def main():
     for eachEvent in events:
         eventgroups[eachEvent.eventTime.weekday()].append(eachEvent)
 
-    print("\t\tDetermining highest cost day")
-    CostsOfEventGroups = {}
+    print("\tDetermining cost of each day")
+    costsOfEventGroups = {}
     for eachDay in eventgroups.keys():
         cost = 0.0
         for eachEvent in eventgroups[eachDay]:
             if eachEvent.isArrivalEvent: cost = cost + eachEvent.cost()
-        CostsOfEventGroups[eachDay] = round(cost, 1)
+        costsOfEventGroups[eachDay] = round(cost, 1)
+        print("\t\tDay: ", eachDay, "Cost: ", costsOfEventGroups[eachDay])
 
     # Sort and process each group of events
     for eachDay in eventgroups.keys():
@@ -197,6 +167,7 @@ def main():
                                  and (nextEvent.eventTime - event.eventTime).seconds < tolerance
 
         print("\t\tScheduling Instructors")
+        instructors = Instructor_from_Row.instructors
         instructors.sort()
         unscheduledInstructors = instructors
         scheduledInstructors = []
@@ -229,10 +200,10 @@ def main():
             instructorChangeNeeded = eachEvent.instructorCount - len(scheduledInstructors)
             if not eachEvent.isChurnEvent and instructorChangeNeeded > 0:
                 # Schedule available instructors
-                print("\t\t\tSchedule Instructor")
+#                print("\t\t\tSchedule Instructor")
                 countScheduled = 0
                 unscheduledInstructors.sort()
-                print("Unscheduled Instructors: " + str(len(unscheduledInstructors)))
+#                print("Unscheduled Instructors: " + str(len(unscheduledInstructors)))
                 while (countScheduled < instructorChangeNeeded):
                     # Find instructor and schedule instructor
                     instructorsChanged = []
@@ -248,7 +219,7 @@ def main():
 
             if not eachEvent.isChurnEvent and instructorChangeNeeded < 0:
                 # Unschedule instructors
-                print("\t\t\tUnschedule Instructor")
+#                print("\t\t\tUnschedule Instructor")
                 countUnscheduled = 0
                 instructorsChanged = []
                 unscheduledInstructors.sort()
@@ -298,8 +269,8 @@ def main():
                                              + str(eachInstructor.schedule[eachDay][0]) + "," \
                                              + str(eachInstructor.schedule[eachDay][1]) + "\n")
     print("Closing all files\n")
-    student_attendance_report.close()
-    instructorAvailabilityFile.close()
+    student_attendance_wb.close()
+#    instructorAvailabilityFile.close()
     summaryForecastFile.close()
     detailedForecastFile.close()
     instructorScheduleFile.close()

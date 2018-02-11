@@ -1,20 +1,18 @@
-import csv
-import time
-from datetime import datetime, date, timedelta, time
-
 class Common:
-    def __init__(self):
-    #define days consistent with datetime.weekday()
-    self.mon = 0
-    self.tue = 1
-    self.wed = 2
-    self.thu = 3
-    self.fri = 4
-    self.sat = 5
-    self.sun = 6
 
-    #set dayofweek strings
-    self.dayStrings = {sun: "Sunday", mon: "Monday", tue: "Tuesday",\
-                       wed: "Wednesday", thu: "Thursday", fri: "Friday",\
-                       sat: "Saturday"}
+    # define days consistent with datetime.weekday()
+    mon = 0
+    tue = 1
+    wed = 2
+    thu = 3
+    fri = 4
+    sat = 5
+    sun = 6
+
+    # string lookup for days of the week
+    dayStrings = {sun: "Sunday", mon: "Monday", tue: "Tuesday", \
+                  wed: "Wednesday", thu: "Thursday", fri: "Friday", \
+                  sat: "Saturday"}
+
+    def __init__(self):
     
