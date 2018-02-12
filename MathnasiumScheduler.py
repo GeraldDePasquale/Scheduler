@@ -48,6 +48,7 @@ from Student import Student
 def main():
 
     root = Tk()
+    root.withdraw()
 
     print("MathnasiumScheduler Starts")
 
@@ -72,7 +73,7 @@ def main():
     logFile = open(logFileName, 'w')
     print("Opened ", logFileName)
 
-    Instructor.initialize(logFile)
+    Instructor.initialize(logFile, root)
 
     #Open Instructor Schedule File
     prefix = datetime.now().strftime('%Y%m%d%H%M%S')

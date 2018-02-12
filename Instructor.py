@@ -4,7 +4,8 @@ from datetime import datetime, date, timedelta, time
 from tkinter import Tk, filedialog, simpledialog
 from openpyxl import workbook, worksheet, load_workbook
 
-root = Tk()
+root = None
+
 directory = "C:\\ProgramData\\MathnasiumScheduler"
 FILEOPENOPTIONS = dict(defaultextension='.csv', filetypes=[('XLSX', '*.xlsx'), ('CSV file', '*.csv')])
 
@@ -41,64 +42,84 @@ instructionHours = {sun: [], \
                     fri: [], \
                     sat: [time(10, 00), time(14, 00)]}
 
+# number of virtual instructors (move to config file)
+virtual_instructors = 10
 
 class Instructor:
-    def __init__(self, row, prev=None, next=None):
+    def __init__(self, row=None, prev=None, next=None):
+        if row is not None: #otherwise it's a virtual instructor
+            self.prev = prev
+            self.next = next
 
-        self.prev = prev
-        self.next = next
+            # define work schedule
+            self.schedule = {sun: [], mon: [], tue: [], wed: [], thu: [], fri: [], sat: []}
 
-        # define work schedule
-        self.schedule = {sun: [], mon: [], tue: [], wed: [], thu: [], fri: [], sat: []}
+            # set instructor name
+            self.availability_reported = row[0].value
+            self.email_address = row[1].value
+            self.name = row[2].value
 
-        # set instructor name
-        self.availability_reported = row[0].value
-        self.email_address = row[1].value
-        self.name = row[2].value
+            # set instructors hours of availability based upon the lines in the InstructorAvailability input file
+            self.availability = {sun: (time(0, 0), time(0, 0)), \
+                                 mon: (row[5].value, row[6].value), \
+                                 tue: (row[8].value, row[9].value), \
+                                 wed: (row[11].value, row[12].value), \
+                                 thu: (row[14].value, row[15].value), \
+                                 fri: (time(0, 0), time(0, 0)), \
+                                 sat: (row[17].value, row[18].value)}
 
-        # set instructors hours of availability based upon the lines in the InstructorAvailability input file
-        self.availability = {sun: (time(0, 0), time(0, 0)), \
-                             mon: (row[5].value, row[6].value), \
-                             tue: (row[8].value, row[9].value), \
-                             wed: (row[11].value, row[12].value), \
-                             thu: (row[14].value, row[15].value), \
-                             fri: (time(0, 0), time(0, 0)), \
-                             sat: (row[17].value, row[18].value)}
+            # set rank
+            self.rank = 999 #Not found
+            #find row of the instructor, then assign rank from cell
+            first_row = 2  # skip the headers
+            last_row = Instructor.config_ws.max_row
+            last_col = Instructor.config_ws.max_column
+            for row in Instructor.config_ws.iter_rows(min_row=first_row, max_col=last_col, max_row=last_row):
+                if row[0].value == self.name:
+                    self.rank = row[2].value
 
-        # set rank
-        self.rank = 999 #Not found
-        #find row of the instructor, then assign rank from cell
-        first_row = 2  # skip the headers
-        last_row = Instructor.config_ws.max_row
-        last_col = Instructor.config_ws.max_column
-        for row in Instructor.config_ws.iter_rows(min_row=first_row, max_col=last_col, max_row=last_row):
-            if row[0].value == self.name:
-                self.rank = row[2].value
+             # set cost
+            self.cost = 15
 
-        print(Instructor.config_ws["A1"].value)
+            # set max hours per week
+            self.maxHrsPerWeek = 20
 
-        # set cost
-        self.cost = 15
+            # set min hours per day
+            self.minHrsPerDay = 2
 
-        # set max hours per week
-        self.maxHrsPerWeek = 20
+            # set work day preferences
+            self.workDayPreferences = {sun: 0, mon: 2, tue: 3, wed: 4, thu: 5, fri: 6, sat: 7}
+            # set dayofweek strings
+            self.dayStrings = {sun: "Sunday", mon: "Monday", tue: "Tuesday", \
+                               wed: "Wednesday", thu: "Thursday", fri: "Friday", \
+                               sat: "Saturday"}
 
-        # set min hours per day
-        self.minHrsPerDay = 2
-
-        # set work day preferences
-        self.workDayPreferences = {sun: 0, mon: 2, tue: 3, wed: 4, thu: 5, fri: 6, sat: 7}
-        # set dayofweek strings
-        self.dayStrings = {sun: "Sunday", mon: "Monday", tue: "Tuesday", \
-                           wed: "Wednesday", thu: "Thursday", fri: "Friday", \
-                           sat: "Saturday"}
-
-        # set isSchedule flag - this variable is set by the scheduling process
-        self.isScheduled = False
+            # set isSchedule flag - this variable is set by the scheduling process
+            self.isScheduled = False
 
     @classmethod
-    def initialize(self, file):
+    def virtual(cls, index=1):
+        virtual_instructor = cls()
+        virtual_instructor.schedule = {sun: [], mon: [], tue: [], wed: [], thu: [], fri: [], sat: []}
+        virtual_instructor.availability_reported = datetime.now()
+        virtual_instructor.email_address = "stafford@mathnasium.com"
+        virtual_instructor.name = 'Gap '+ str(index)
+        virtual_instructor.availability = instructionHours
+        virtual_instructor.rank = 999
+        virtual_instructor.cost = 15
+        virtual_instructor.maxHrsPerWeek = 100
+        virtual_instructor.minHrsPerDay = 0
+        virtual_instructor.workDayPreferences = {sun: 0, mon: 2, tue: 3, wed: 4, thu: 5, fri: 6, sat: 7}
+        virtual_instructor.dayStrings = {sun: "Sunday", mon: "Monday", tue: "Tuesday", \
+                           wed: "Wednesday", thu: "Thursday", fri: "Friday", \
+                           sat: "Saturday"}
+        virtual_instructor.isScheduled = False
+        return virtual_instructor
+
+    @classmethod
+    def initialize(cls, file, root):
         Instructor.log_file = file
+        Instructor.root = root
         # Open Configuration File
         Instructor.config_file_name = filedialog.askopenfilename(parent=root, initialdir=directory,
                                                                  title='Select Configuration File', **FILEOPENOPTIONS)
@@ -130,6 +151,10 @@ class Instructor:
         Instructor.instructors = []
         for row in Instructor.availability_ws.iter_rows(min_row=first_row, max_col=last_col, max_row=last_row):
             Instructor.instructors.append(Instructor(row, Instructor.log_file))
+        # add Virtual Instructors to identify periods that cannot covered by existing staff
+        for i in range (1, virtual_instructors):
+            Instructor.instructors.append(Instructor.virtual(i))
+
         for eachInstructor in Instructor.instructors: print("Instructor: ", eachInstructor.name,
                                                                      "Rank: ", eachInstructor.rank)
         print("Created Instructors")
