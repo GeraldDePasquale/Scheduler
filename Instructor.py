@@ -69,13 +69,15 @@ class Instructor:
                                  sat: (row[17].value, row[18].value)}
 
             # set rank
-            self.rank = 999 #Not found
+            self.rank = 999 #rank found
             #find row of the instructor, then assign rank from cell
+            #cross references name in availability file to name in configuration sheet then assigns
             first_row = 2  # skip the headers
             last_row = Instructor.config_ws.max_row
             last_col = Instructor.config_ws.max_column
             for row in Instructor.config_ws.iter_rows(min_row=first_row, max_col=last_col, max_row=last_row):
-                if row[0].value == self.name:
+                #does my name match the name in the configuration file? If so, set rank.
+                if self.name == row[0].value:
                     self.rank = row[2].value
 
              # set cost
@@ -137,8 +139,7 @@ class Instructor:
         Instructor.availability_ws = Instructor.availability_wb.active
         print("Loaded ", Instructor.availability_file_name)
 
-        #Clean up Awailability Work Sheet
-        # Replace periods of unavailability with valid time (eg.g None becomes time(0,0))
+        #Update Availability Work Sheet: add default time time(0,0) where time is absent
         first_row = 2  # skip the headers
         last_row = Instructor.availability_ws.max_row
         last_col = Instructor.availability_ws.max_column
@@ -151,10 +152,9 @@ class Instructor:
         Instructor.instructors = []
         for row in Instructor.availability_ws.iter_rows(min_row=first_row, max_col=last_col, max_row=last_row):
             Instructor.instructors.append(Instructor(row, Instructor.log_file))
-        # add Virtual Instructors to identify periods that cannot covered by existing staff
+        # Add Virtual Instructors to identify periods that cannot covered by existing staff
         for i in range (1, virtual_instructors):
             Instructor.instructors.append(Instructor.virtual(i))
-
         for eachInstructor in Instructor.instructors: print("Instructor: ", eachInstructor.name,
                                                                      "Rank: ", eachInstructor.rank)
         print("Created Instructors")
@@ -256,3 +256,6 @@ class Instructor:
                 if myStopTime == myStartTime: myStopTime = instructionHours[eachKey][1]
                 self.schedule[eachKey] = [self.adjustTime(myStartTime), self.adjustTime(myStopTime)]
         return self.schedule
+
+    def tuple(self, day):
+        return [self.name, self.dayString(day), self.schedule[day][0], self.schedule[day][1]]

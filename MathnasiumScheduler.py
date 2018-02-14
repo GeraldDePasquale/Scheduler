@@ -35,6 +35,7 @@
 
 import csv
 import math
+import os
 import os.path
 from datetime import datetime
 from tkinter import Tk, filedialog, simpledialog
@@ -56,47 +57,57 @@ def main():
     FILEOPENOPTIONS = dict(defaultextension='.csv', filetypes=[('XLSX', '*.xlsx'), ('CSV file', '*.csv')])
 
     #Get Center Name
-    centerName = simpledialog.askstring("Name prompt", "Enter Center Name")
+    center_name = simpledialog.askstring("Name prompt", "Enter Center Name")
+
+    #Get Runtime - used in file names for easy sorting of successive runs
+    runtime = datetime.now().strftime('%Y%m%d%H%M')
 
     #Open Attendance File
     directory = "C:\\ProgramData\\MathnasiumScheduler"
     student_attendance_report_file = filedialog.askopenfilename(parent=root, initialdir=directory,
                                                           title='Select Student Attendance Report', **FILEOPENOPTIONS)
-    student_attendance_wb = load_workbook(student_attendance_report_file, data_only=True, guess_types=True)
+    attendance_wb = load_workbook(student_attendance_report_file, data_only=True, guess_types=True)
     print("Opened", student_attendance_report_file)
 
+    run_wb_path = directory + "\\" + center_name + "." + runtime + ".xlsx"
+    attendance_wb.save(run_wb_path)
+    run_wb = load_workbook(run_wb_path, data_only= True, guess_types=True)
+    attendance_ws = run_wb.active
+    attendance_ws.title = "Attendance"
+    attendance_ws._index = 6
+    schedule_by_name_ws = run_wb.create_sheet("Schedule By Name", index=0)
+    schedule_by_day_ws = run_wb.create_sheet("Schedule By Day", index=1)
+    forecast_summary_ws = run_wb.create_sheet("Summary Forecast", index=2)
+    forecast_detailed_ws = run_wb.create_sheet("Detailed Forecast", index=3)
+    run_log_ws = run_wb.create_sheet("Runlog", index=4)
+    warnings_ws = run_wb.create_sheet("Warnings", index=5)
+
     # Open Log File
-    directoryWarnings = directory + "\\Warnings"
-    if not os.path.exists(directoryWarnings):
-        os.makedirs(directoryWarnings)
-    logFileName = directoryWarnings + "\\Forecast Warnings.csv"
-    logFile = open(logFileName, 'w')
-    print("Opened ", logFileName)
+#    directory_warnings = directory + "\\Warnings"
+#   if not os.path.exists(directory_warnings):
+#      os.makedirs(directory_warnings)
+#    logfile_name = directory_warnings + "\\Forecast Warnings.csv"
+#    run_log_ws = open(logfile_name, 'w')
+#    print("Opened ", logfile_name)
 
-    Instructor.initialize(logFile, root)
-
-    #Open Instructor Schedule File
-    prefix = datetime.now().strftime('%Y%m%d%H%M%S')
-    instructorScheduleFileName = directory+"\\"+centerName+" Instructor Schedule."+prefix+".csv"
-    instructorScheduleFile = open(instructorScheduleFileName, 'w')
-    print("Opened ", instructorScheduleFileName)
+    Instructor.initialize(run_log_ws, root)
 
     #Create Students
     print("Creating students from Student Attendance Report\n")
     students = []
-    student_ws = student_attendance_wb.active
+    student_ws = attendance_wb.active
     first_row = 2 #skip the headers
     last_row = student_ws.max_row
     last_col = student_ws.max_column
     for row in student_ws.iter_rows(min_row = first_row, max_col = last_col, max_row=last_row):
-        students.append(Student(row,logFile))
+        students.append(Student(row, run_log_ws))
 
     #Create Events
     print("Creating events from student arrivals and departures\n")
     events = []
-    for eachStudent in students:
-        events.append(Event('Arrival', eachStudent.arrivalTime, eachStudent))
-        events.append(Event('Departure', eachStudent.departureTime, eachStudent))
+    for each_student in students:
+        events.append(Event('Arrival', each_student.arrivalTime, each_student))
+        events.append(Event('Departure', each_student.departureTime, each_student))
     events.sort()
 
     #Executing Events
@@ -112,171 +123,190 @@ def main():
     sun = 6
 
     # Group events by day
-    eventgroups = {sun: [], mon: [], tue: [], wed: [], thu: [], fri: [], sat: []}
-    for eachEvent in events:
-        eventgroups[eachEvent.eventTime.weekday()].append(eachEvent)
+    event_groups = {sun: [], mon: [], tue: [], wed: [], thu: [], fri: [], sat: []}
+    for each_event in events:
+        event_groups[each_event.eventTime.weekday()].append(each_event)
 
     print("\tDetermining cost of each day")
     costsOfEventGroups = {}
-    for eachDay in eventgroups.keys():
+    for each_day in event_groups.keys():
         cost = 0.0
-        for eachEvent in eventgroups[eachDay]:
-            if eachEvent.isArrivalEvent: cost = cost + eachEvent.cost()
-        costsOfEventGroups[eachDay] = round(cost, 1)
-        print("\t\tDay: ", eachDay, "Cost: ", costsOfEventGroups[eachDay])
+        for each_event in event_groups[each_day]:
+            if each_event.isArrivalEvent: cost = cost + each_event.cost()
+        costsOfEventGroups[each_day] = round(cost, 1)
+        print("\t\tDay: ", each_day, "Cost: ", costsOfEventGroups[each_day])
 
     # Sort and process each group of events
-    for eachDay in eventgroups.keys():
-        print("\n\tProcessing Day: ", str(eachDay))
-        eventgroups[eachDay].sort()
+    for each_day in event_groups.keys():
+        print("\n\tProcessing Day: ", str(each_day))
+        event_groups[each_day].sort()
         instructorsMinimum = 2.0  # the minimum staffing level
         instructorsRequired = 0.0  # actual number of instructors required to meet student demand
         eventnumber = 1  # first event number
         studentcount = 0  # start with zero students
-        for eachEvent in eventgroups[eachDay]:
+        for each_event in event_groups[each_day]:
             # Set event number
-            eachEvent.eventNumber = eventnumber
+            each_event.eventNumber = eventnumber
             # Set event's previous and next events
-            if eventnumber != 1: eachEvent.prev = events[events.index(eachEvent) - 1]
-            if eventnumber != len(eventgroups[eachDay]): eachEvent.next = eventgroups[eachDay][
-                eventgroups[eachDay].index(eachEvent) + 1]
+            if eventnumber != 1: each_event.prev = events[events.index(each_event) - 1]
+            if eventnumber != len(event_groups[each_day]): each_event.next = event_groups[each_day][
+                event_groups[each_day].index(each_event) + 1]
             eventnumber = eventnumber + 1  # next event number
             # Maintain student count
-            if (eachEvent.isArrivalEvent):
+            if (each_event.isArrivalEvent):
                 studentcount = studentcount + 1
-            elif (eachEvent.isDepartureEvent):
+            elif (each_event.isDepartureEvent):
                 studentcount = studentcount - 1
-            eachEvent.studentCount = studentcount
+            each_event.studentCount = studentcount
             # Compute/maintain the actual number of instructors required
-            instructorsRequired = instructorsRequired + eachEvent.cost()
+            instructorsRequired = instructorsRequired + each_event.cost()
             # Compute/maintain the number of instructors to staff (minimum is instructorsMinimum)
-            eachEvent.instructorCount = max(instructorsMinimum, math.ceil(instructorsRequired))
+            each_event.instructorCount = max(instructorsMinimum, math.ceil(instructorsRequired))
 
         print("\t\tCollecting Instructor Change Events")
-        instructorChangeEvents = []
-        for eachEvent in eventgroups[eachDay]:
-            if eachEvent.isInstructorChangeEvent():
-                instructorChangeEvents.append(eachEvent)
+        instructor_change_events = []
+        for each_event in event_groups[each_day]:
+            if each_event.isInstructorChangeEvent():
+                instructor_change_events.append(each_event)
 
         print("\t\tMarking Churn Events")
         tolerance = 360  # seconds (6 minutes)
-        for i in range(len(instructorChangeEvents) - 1):
-            event = instructorChangeEvents[i]
-            nextEvent = instructorChangeEvents[i + 1]
+        for i in range(len(instructor_change_events) - 1):
+            event = instructor_change_events[i]
+            nextEvent = instructor_change_events[i + 1]
             event.isChurnEvent = event.isPeakEvent() and nextEvent.isValleyEvent() \
                                  and (nextEvent.eventTime - event.eventTime).seconds < tolerance
 
         print("\t\tScheduling Instructors")
         instructors = Instructor.instructors
         instructors.sort()
-        unscheduledInstructors = instructors
-        scheduledInstructors = []
+        unscheduled_instructors = instructors
+        scheduled_instructors = []
         dateChangeEvents = 0
 
-        for eachEvent in eventgroups[eachDay]:
-            if eachEvent.isDateChangeEvent():
+        for each_event in event_groups[each_day]:
+            if each_event.isDateChangeEvent():
                 dateChangeEvents = dateChangeEvents + 1
                 # Schedule minimum number of instructors needed to open
-                countScheduled = 0
-                unscheduledInstructors.sort()
-                instructorsChanged = []
-                for thisInstructor in unscheduledInstructors:
-                    if thisInstructor.isAvailableToOpen(eachEvent) and (countScheduled < instructorsMinimum):
-                        countScheduled = countScheduled + 1
-                        thisInstructor.startWorkWhenOpen(eachEvent)
-                        scheduledInstructors.append(thisInstructor)
+                count_scheduled = 0
+                unscheduled_instructors.sort()
+                instructors_changed = []
+                for this_instructor in unscheduled_instructors:
+                    if this_instructor.isAvailableToOpen(each_event) and (count_scheduled < instructorsMinimum):
+                        count_scheduled = count_scheduled + 1
+                        this_instructor.startWorkWhenOpen(each_event)
+                        scheduled_instructors.append(this_instructor)
                         # save pointers to instructors for removal from unscheduled list
-                        instructorsChanged.append(thisInstructor)
-                for i in instructorsChanged: unscheduledInstructors.remove(i)
+                        instructors_changed.append(this_instructor)
+                for i in instructors_changed: unscheduled_instructors.remove(i)
 
             # Check for and remove departing Instructors
-            departedInstructors = []
-            for thisInstructor in scheduledInstructors:
+            departed_instructors = []
+            for this_instructor in scheduled_instructors:
                 departed = False
-                if thisInstructor.mustDepart(eachEvent):
-                    thisInstructor.departWork(eachEvent)
-                    departedInstructors.append(thisInstructor)
+                if this_instructor.mustDepart(each_event):
+                    this_instructor.departWork(each_event)
+                    departed_instructors.append(this_instructor)
 
-            instructorChangeNeeded = eachEvent.instructorCount - len(scheduledInstructors)
-            if not eachEvent.isChurnEvent and instructorChangeNeeded > 0:
+            instructor_change_needed = each_event.instructorCount - len(scheduled_instructors)
+            if not each_event.isChurnEvent and instructor_change_needed > 0:
                 # Schedule available instructors
 #                print("\t\t\tSchedule Instructor")
-                countScheduled = 0
-                unscheduledInstructors.sort()
-#                print("Unscheduled Instructors: " + str(len(unscheduledInstructors)))
-                while (countScheduled < instructorChangeNeeded):
+                count_scheduled = 0
+                unscheduled_instructors.sort()
+#                print("Unscheduled Instructors: " + str(len(unscheduled_instructors)))
+                while (count_scheduled < instructor_change_needed):
                     # Find instructor and schedule instructor
-                    instructorsChanged = []
-                    for thisInstructor in unscheduledInstructors:
-                        if thisInstructor.isAvailable(eachEvent) and (countScheduled < instructorChangeNeeded):
-                            countScheduled = countScheduled + 1
-                            thisInstructor.startWork(eachEvent)
-                            scheduledInstructors.append(thisInstructor)
+                    instructors_changed = []
+                    for this_instructor in unscheduled_instructors:
+                        if this_instructor.isAvailable(each_event) and (count_scheduled < instructor_change_needed):
+                            count_scheduled = count_scheduled + 1
+                            this_instructor.startWork(each_event)
+                            scheduled_instructors.append(this_instructor)
                             # Save pointers to newly scheduled instructors for removal from unscheduled list
-                            instructorsChanged.append(thisInstructor)
+                            instructors_changed.append(this_instructor)
                 # Remove newly scheduled instructors from unscheduled list
-                for i in instructorsChanged: unscheduledInstructors.remove(i)
+                for i in instructors_changed: unscheduled_instructors.remove(i)
 
-            if not eachEvent.isChurnEvent and instructorChangeNeeded < 0:
+            if not each_event.isChurnEvent and instructor_change_needed < 0:
                 # Unschedule instructors
 #                print("\t\t\tUnschedule Instructor")
-                countUnscheduled = 0
-                instructorsChanged = []
-                unscheduledInstructors.sort()
-                while countUnscheduled < abs(instructorChangeNeeded):
-                    for thisInstructor in reversed(scheduledInstructors):
-                          if countUnscheduled < abs(instructorChangeNeeded):
-                            countUnscheduled = countUnscheduled + 1
-                            thisInstructor.stopWork(eachEvent)
-                            unscheduledInstructors.append(thisInstructor)
-                            instructorsChanged.append(thisInstructor)
-                for i in instructorsChanged: scheduledInstructors.remove(i)
+                count_unscheduled = 0
+                instructors_changed = []
+                unscheduled_instructors.sort()
+                while count_unscheduled < abs(instructor_change_needed):
+                    for this_instructor in reversed(scheduled_instructors):
+                          if count_unscheduled < abs(instructor_change_needed):
+                            count_unscheduled = count_unscheduled + 1
+                            this_instructor.stopWork(each_event)
+                            unscheduled_instructors.append(this_instructor)
+                            instructors_changed.append(this_instructor)
+                for i in instructors_changed: scheduled_instructors.remove(i)
 
             # Finalize schedules after last departure or final event of the day
-            if (eachEvent == eventgroups[eachDay][len(eventgroups[eachDay]) - 1]) or eachEvent.next.isDateChangeEvent():
-                instructorsChanged = []
-                for thisInstructor in scheduledInstructors:
-                    thisInstructor.isScheduled = False
-                    unscheduledInstructors.append(thisInstructor)
-                    instructorsChanged.append(thisInstructor)
-                for i in instructorsChanged: scheduledInstructors.remove(i)
-                for i in unscheduledInstructors: i.finalizeSchedule()
+            if (each_event == event_groups[each_day][len(event_groups[each_day]) - 1]) or each_event.next.isDateChangeEvent():
+                instructors_changed = []
+                for this_instructor in scheduled_instructors:
+                    this_instructor.isScheduled = False
+                    unscheduled_instructors.append(this_instructor)
+                    instructors_changed.append(this_instructor)
+                for i in instructors_changed: scheduled_instructors.remove(i)
+                for i in unscheduled_instructors: i.finalizeSchedule()
 
-    print("\n Writing ......")
-    print("\t C:\\Users\\Gerald\\Downloads\\Scheduling\\"+centerName+" Instructor Forecast - Summary.csv")
-    print("\t C:\\Users\\Gerald\\Downloads\\Scheduling\\"+centerName+" Instructor Forecast - Detailed.csv")
-    print("\t C:\\Users\\Gerald\Downloads\\Scheduling\\"+centerName+" Instructor Schedule.csv\n")
-    # Write Attendance Forecasts
-    summaryForecastFile = open(directory+'\\'+centerName+' Instructor Forecast - Summary.csv', 'w')
-    detailedForecastFile = open(directory+'\\'+centerName+' Instructor Forecast - Detailed.csv', 'w')
-    summaryForecastFile.write(
-        str('Event #,Student Name,Grade,Event,Time,Day,Student Count,Student:Instructor,Instructors Required\n'))
-    detailedForecastFile.write(
-        str('Event #,Student Name,Grade,Event,Time,Day,Student Count,Student:Instructor,Instructors Required\n'))
-    for each in events:
-        # Write Summary Forecast
-        if ((not each.isChurnEvent) and (each.isDateChangeEvent() or each.isInstructorChangeEvent())):
-            summaryForecastFile.write(str(each))
-        # Write Detailed Forecast
-        detailedForecastFile.write(str(each))
+    print("\n Writing Schedule, Summary Forecast, Detailed Forecast")
 
-    # Write Instructor Schedules
-    instructorScheduleFile.write("Instructor Name," + "Day," + "Start Time," + "Stop Time\n")
-    for eachInstructor in instructors:
-        for eachDay in eachInstructor.schedule.keys():
-            if eachInstructor.schedule[eachDay]:
-                instructorScheduleFile.write(str(eachInstructor.name) + "," + eachInstructor.dayString(eachDay) + "," \
-                                             + str(eachInstructor.schedule[eachDay][0]) + "," \
-                                             + str(eachInstructor.schedule[eachDay][1]) + "\n")
-    print("Closing all files\n")
-    student_attendance_wb.close()
-#    instructorAvailabilityFile.close()
-    summaryForecastFile.close()
-    detailedForecastFile.close()
-    instructorScheduleFile.close()
-    logFile.close()
+    # Write Detailed Forecast
+    row_num = 1
+    col_num = 1
+    forecast_headers = ["Event #", "Student Name", "Grade" ,"Event","Time","Day",
+                        "Student Count","Student:Instructor","Instructors Required"]
+    for col_header in forecast_headers:
+        forecast_detailed_ws.cell(row_num,col_num).value = col_header
+        col_num = col_num + 1
+    for each_event in events:
+        row_num = row_num + 1
+        col_num = 1
+        for datum in each_event.tuple():
+            forecast_detailed_ws.cell(row_num,col_num).value = datum
+            col_num = col_num + 1
 
+    # Write Summary Forecast
+    row_num = 1
+    col_num = 1
+    for col_header in forecast_headers:
+        forecast_summary_ws.cell(row_num, col_num).value = col_header
+        col_num = col_num + 1
+    for each_event in events:
+        if each_event.is_summary_event():
+            row_num = row_num + 1
+            col_num = 1
+            for datum in each_event.tuple():
+                forecast_summary_ws.cell(row_num, col_num).value = datum
+                col_num = col_num + 1
+
+    # Write By-Name Schedule
+    row_num = 1
+    col_num = 1
+    schedule_headers = ["Instructor Name", "Day", "Start Time", "Stop Time"]
+    for col_header in schedule_headers:
+        schedule_by_name_ws.cell(row_num,col_num).value = col_header
+        col_num = col_num + 1
+    for each_instructor in instructors:
+        for each_day in each_instructor.schedule.keys():
+            if each_instructor.schedule[each_day]:
+                row_num = row_num + 1
+                col_num = 1
+                for datum in each_instructor.tuple(each_day):
+                     schedule_by_name_ws.cell(row_num, col_num).value = datum
+                     col_num = col_num + 1
+
+    print("Closing files")
+    attendance_wb.close()
+#    run_log_ws.close()
+    run_wb.save(run_wb_path)
+    run_wb.close()
+    print("Launching Excel")
+    os.system("start excel " + run_wb_path )
     print("Done")
-
 
 if __name__ == '__main__': main()

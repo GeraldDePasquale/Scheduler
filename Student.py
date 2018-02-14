@@ -11,16 +11,16 @@ class Student:
     veryHighCost = 1 / 1  # Private Lesson
     sessionTime = 1  # hour
 
-    def __init__(self, row, logFile):
+    def __init__(self, row, run_log_ws):
         self.name = row[1].value + ' ' + row[2].value
         try:
             # get datetime when student arrives at center
-            self.arrivalTime = ParserGenerator().arrival_time_from_row(row, logFile)
+            self.arrivalTime = ParserGenerator().arrival_time_from_row(row, run_log_ws)
         except:
-            logFile.write(str(row) + '\n')
+            run_log_ws.write(str(row) + '\n')
         try:
             # get datetime when student departs from center
-            self.departureTime = ParserGenerator().departure_time_from_row(row, logFile)
+            self.departureTime = ParserGenerator().departure_time_from_row(row, run_log_ws)
         except:
             # if the departure time is absent (empty string) set departure to arrival time + session time
             self.departureTime = self.arrivalTime + timedelta(hours=self.sessionTime)

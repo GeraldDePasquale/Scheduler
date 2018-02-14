@@ -45,6 +45,10 @@ class Event:
               self.eventTime, self.weekday(), self.studentCount, \
               self.studentInstructorRatio(), self.instructorCount)
 
+    def tuple(self):
+        return [self.eventNumber, self.student, self.grade, self.eventType,
+                self.eventTime, self.weekday(), self.studentCount,
+                self.studentInstructorRatio(), self.instructorCount]
     def sort(self):
         return self.events.sort()
 
@@ -75,3 +79,6 @@ class Event:
 
     def isValleyEvent(self):
         return self.isInstructorChangeEvent() and self.isDepartureEvent
+
+    def is_summary_event(self):
+        return (not self.isChurnEvent and (self.isDateChangeEvent() or self.isInstructorChangeEvent()))
