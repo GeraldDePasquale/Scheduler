@@ -49,6 +49,7 @@ class Event:
         return [self.eventNumber, self.student, self.grade, self.eventType,
                 self.eventTime, self.weekday(), self.studentCount,
                 self.studentInstructorRatio(), self.instructorCount]
+
     def sort(self):
         return self.events.sort()
 

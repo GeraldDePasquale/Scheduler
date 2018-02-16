@@ -18,7 +18,7 @@
 # 4. Work Availability Spreadsheet - provides instructor availability as input using Google Form: Work Availability
 
 # Hardcoded Parameters:
-#     lowCost = 1/5 instructor to student ratio (Grades 2 .. 5)
+#    lowCost = 1/5 instructor to student ratio (Grades 2 .. 5)
 #    mediumCost = 1/4 instructor to student ratio (Grades 6 .. 8)
 #    highCost = 1/3 instructor to student ratio (Grades 0, 1, 9+)
 #    veryHighCost = 1.0 private tutoring
@@ -44,6 +44,7 @@ from Event import Event
 from Instructor import Instructor
 from Student import Student
 from Importer import Importer
+from Reporter import Reporter
 
 
 def main():
@@ -243,52 +244,7 @@ def main():
                 for i in instructors_changed: scheduled_instructors.remove(i)
                 for i in unscheduled_instructors: i.finalizeSchedule()
 
-    print("\n Writing Schedule, Summary Forecast, Detailed Forecast")
-
-    # Write Detailed Forecast
-    row_num = 1
-    col_num = 1
-    forecast_headers = ["Event #", "Student Name", "Grade" ,"Event","Time","Day",
-                        "Student Count","Student:Instructor","Instructors Required"]
-    for col_header in forecast_headers:
-        forecast_detailed_ws.cell(row_num,col_num).value = col_header
-        col_num = col_num + 1
-    for each_event in events:
-        row_num = row_num + 1
-        col_num = 1
-        for datum in each_event.tuple():
-            forecast_detailed_ws.cell(row_num,col_num).value = datum
-            col_num = col_num + 1
-
-    # Write Summary Forecast
-    row_num = 1
-    col_num = 1
-    for col_header in forecast_headers:
-        forecast_summary_ws.cell(row_num, col_num).value = col_header
-        col_num = col_num + 1
-    for each_event in events:
-        if each_event.is_summary_event():
-            row_num = row_num + 1
-            col_num = 1
-            for datum in each_event.tuple():
-                forecast_summary_ws.cell(row_num, col_num).value = datum
-                col_num = col_num + 1
-
-    # Write By-Name Schedule
-    row_num = 1
-    col_num = 1
-    schedule_headers = ["Instructor Name", "Day", "Start Time", "Stop Time"]
-    for col_header in schedule_headers:
-        schedule_by_name_ws.cell(row_num,col_num).value = col_header
-        col_num = col_num + 1
-    for each_instructor in instructors:
-        for each_day in each_instructor.schedule.keys():
-            if each_instructor.schedule[each_day]:
-                row_num = row_num + 1
-                col_num = 1
-                for datum in each_instructor.tuple(each_day):
-                     schedule_by_name_ws.cell(row_num, col_num).value = datum
-                     col_num = col_num + 1
+    Reporter().write_all(events, instructors, forecast_detailed_ws, forecast_summary_ws, schedule_by_name_ws)
 
     print("Closing files")
     scheduling_data_sheets.close_workbooks()
