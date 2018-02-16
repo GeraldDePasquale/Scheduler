@@ -1,10 +1,5 @@
-import csv
 import time
-from datetime import datetime, date, timedelta, time
-from tkinter import Tk, filedialog, simpledialog
-from openpyxl import workbook, worksheet, load_workbook
-
-root = None
+from datetime import datetime, time
 
 directory = "C:\\ProgramData\\MathnasiumScheduler"
 FILEOPENOPTIONS = dict(defaultextension='.csv', filetypes=[('XLSX', '*.xlsx'), ('CSV file', '*.csv')])
@@ -18,19 +13,10 @@ fri = 4
 sat = 5
 sun = 6
 
-logfile = None
-instructors = []
-config_file_name = None
-config_wb = None
+log_file = None
 config_ws = None
-availability_file_name = None
-availability_wb = None
-availability_ws = None
-instructor_schedule_file = None
-instructor_ws = None
-
+instructors = []
 initialized = False
-
 unavailable = time(0, 0)
 
 # center instruction hours
@@ -119,38 +105,22 @@ class Instructor:
         return virtual_instructor
 
     @classmethod
-    def initialize(cls, file, root):
-        Instructor.log_file = file
-        Instructor.root = root
-        # Open Configuration File
-        Instructor.config_file_name = filedialog.askopenfilename(parent=root, initialdir=directory,
-                                                                 title='Select Configuration File', **FILEOPENOPTIONS)
-        Instructor.config_wb = load_workbook(Instructor.config_file_name,
-                                             data_only=True, guess_types=True)
-        Instructor.config_ws = Instructor.config_wb.active
-        print("Loaded ", Instructor.config_file_name)
-
-        # Open Instructor Availabilty File
-        Instructor.availability_file_name = filedialog.askopenfilename(parent=root, initialdir=directory,
-                                                                       title='Select Instructor Availability File',
-                                                                       **FILEOPENOPTIONS)
-        Instructor.availability_wb = load_workbook(Instructor.availability_file_name,
-                                                   data_only=True, guess_types=True)
-        Instructor.availability_ws = Instructor.availability_wb.active
-        print("Loaded ", Instructor.availability_file_name)
+    def initialize(cls, availability_ws, config_ws, run_log):
+        Instructor.log_file = run_log
+        Instructor.config_ws = config_ws
 
         #Update Availability Work Sheet: add default time time(0,0) where time is absent
         first_row = 2  # skip the headers
-        last_row = Instructor.availability_ws.max_row
-        last_col = Instructor.availability_ws.max_column
-        for row in Instructor.availability_ws.iter_rows(min_row=first_row, max_col=last_col, max_row=last_row):
+        last_row = availability_ws.max_row
+        last_col = availability_ws.max_column
+        for row in availability_ws.iter_rows(min_row=first_row, max_col=last_col, max_row=last_row):
             for i in [5,6,8,9,11,12,14,15,17,18]:
                 if row[i].value == None: row[i].value = time(0,0)
         for eachInstructor in instructors: print(eachInstructor.name)
 
         # Create Instructors
         Instructor.instructors = []
-        for row in Instructor.availability_ws.iter_rows(min_row=first_row, max_col=last_col, max_row=last_row):
+        for row in availability_ws.iter_rows(min_row=first_row, max_col=last_col, max_row=last_row):
             Instructor.instructors.append(Instructor(row, Instructor.log_file))
         # Add Virtual Instructors to identify periods that cannot covered by existing staff
         for i in range (1, virtual_instructors):

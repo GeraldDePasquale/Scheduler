@@ -1,25 +1,24 @@
 # Mathnasium Staffing Forecast
 #   Forecasts instructor staffing requirements for scheduling purposes.
-#   It forecasts based upon a student arrival-departure event model.
-#   OOArrivals.5.py March 5, 2015 Linked list modification
-#   OOArrivals.6.py March 5, 2015 Use Event class variables
+#   Forecasts based upon a student arrival-departure event model.
 
 # Outputs:
-#  (1) Summary Staffing Requirements (Instructor Forecast - Summary.csv)
-#   number of instructors required each instruction day. Shows only
-#   times when increases and decreases in staffing levels are required.
-#  (2) Detailed Staffing Requirements (Instructor Forecast - Detailed.csv)
-#   number of instructors required each instruction day. Shows every
-#   event used for forcasting.
-#  (3) Forecast Noticesg (Forecast Warnings.csv)
-#   Notices and Warnings the forecast that was run (e.g. defaults used
-#   during the run, data errors, assumptions used to handle data errors). 
+# Excel Workbook containing:
+# 1. Instructor Schedules
+# 2. Summary Staffing Forecast Sheet provides number of instructors required each instruction day. Shows only
+#   events when actual increases or decreases in staffing levels are required.
+# 3. Detailed Stafford Forecast Sheet provides same data as Summary Staffing Forecast except that it provides
+#    every event used for forcasting.
 
 # Inputs:
-#  (1) Custom M2 Attendance Report (Attendance Report.csv) for the period
-#   of time, used to forecast staffing requirements exported in csv format
-#  (2) Input parameters
-#    lowCost = 1/5 instructor to student ratio (Grades 2 .. 5)
+# 1. Radius Attendance Report
+# 2. Radius Student Report
+# 3. Configuration File - includes instructor ranking for scheduling purposes. Also provides other instructor
+# specific data (e.g. cost / hour)
+# 4. Work Availability Spreadsheet - provides instructor availability as input using Google Form: Work Availability
+
+# Hardcoded Parameters:
+#     lowCost = 1/5 instructor to student ratio (Grades 2 .. 5)
 #    mediumCost = 1/4 instructor to student ratio (Grades 6 .. 8)
 #    highCost = 1/3 instructor to student ratio (Grades 0, 1, 9+)
 #    veryHighCost = 1.0 private tutoring
@@ -32,75 +31,66 @@
 #       return to 10:30 in a matter of minutes. How many minutes are tolerable?
 #       Default: 6 minutes per hour.
 
-
 import csv
 import math
 import os
 import os.path
 from datetime import datetime
 from tkinter import Tk, filedialog, simpledialog
-from openpyxl import workbook, worksheet, load_workbook
+from openpyxl import Workbook, worksheet, load_workbook
 import Event
 import Student
 from Event import Event
 from Instructor import Instructor
 from Student import Student
+from Importer import Importer
+
 
 def main():
 
     root = Tk()
     root.withdraw()
-
-    print("MathnasiumScheduler Starts")
-
-    directory = "C:\\ProgramData\\MathnasiumScheduler"
+    run_time = datetime.now().strftime('%Y%m%d%H%M') # used for file extensions, makes sorting easy
+    print("Mathnasium Scheduler Starts")
+    default_directory = "C:\\ProgramData\\MathnasiumScheduler"
     FILEOPENOPTIONS = dict(defaultextension='.csv', filetypes=[('XLSX', '*.xlsx'), ('CSV file', '*.csv')])
-
-    #Get Center Name
+    # Todo-jerry add center name picklist, get center names from configuraton file
     center_name = simpledialog.askstring("Name prompt", "Enter Center Name")
+    scheduling_data_sheets = Importer(run_time, default_directory, center_name, FILEOPENOPTIONS) #load the working data
 
-    #Get Runtime - used in file names for easy sorting of successive runs
-    runtime = datetime.now().strftime('%Y%m%d%H%M')
-
-    #Open Attendance File
-    directory = "C:\\ProgramData\\MathnasiumScheduler"
-    student_attendance_report_file = filedialog.askopenfilename(parent=root, initialdir=directory,
-                                                          title='Select Student Attendance Report', **FILEOPENOPTIONS)
-    attendance_wb = load_workbook(student_attendance_report_file, data_only=True, guess_types=True)
-    print("Opened", student_attendance_report_file)
-
-    run_wb_path = directory + "\\" + center_name + "." + runtime + ".xlsx"
-    attendance_wb.save(run_wb_path)
-    run_wb = load_workbook(run_wb_path, data_only= True, guess_types=True)
-    attendance_ws = run_wb.active
-    attendance_ws.title = "Attendance"
-    attendance_ws._index = 6
+    #Create Schedule Workbook
+    # Create Run Workbook
+    run_wb_path = default_directory + "\\" + center_name + "." + run_time + ".xlsx"
+    run_wb = Workbook()
+    run_wb.save(run_wb_path)
     schedule_by_name_ws = run_wb.create_sheet("Schedule By Name", index=0)
     schedule_by_day_ws = run_wb.create_sheet("Schedule By Day", index=1)
     forecast_summary_ws = run_wb.create_sheet("Summary Forecast", index=2)
     forecast_detailed_ws = run_wb.create_sheet("Detailed Forecast", index=3)
     run_log_ws = run_wb.create_sheet("Runlog", index=4)
-    warnings_ws = run_wb.create_sheet("Warnings", index=5)
+    #ToDo Write run_log to run_log_ws
+    run_log = []
 
     # Open Log File
-#    directory_warnings = directory + "\\Warnings"
-#   if not os.path.exists(directory_warnings):
-#      os.makedirs(directory_warnings)
+#    directory_warnings = default_directory + "\\Warnings"
+#   if not os.path.exists(directory_warnings): os.makedirs(directory_warnings)
 #    logfile_name = directory_warnings + "\\Forecast Warnings.csv"
 #    run_log_ws = open(logfile_name, 'w')
 #    print("Opened ", logfile_name)
 
-    Instructor.initialize(run_log_ws, root)
+    Instructor.initialize(scheduling_data_sheets.instructor_availability_ws,
+                          scheduling_data_sheets.config_ws,
+                          run_log)
 
     #Create Students
     print("Creating students from Student Attendance Report\n")
     students = []
-    student_ws = attendance_wb.active
+    student_ws = scheduling_data_sheets.attendance_ws  #attendance_wb.active
     first_row = 2 #skip the headers
     last_row = student_ws.max_row
     last_col = student_ws.max_column
     for row in student_ws.iter_rows(min_row = first_row, max_col = last_col, max_row=last_row):
-        students.append(Student(row, run_log_ws))
+        students.append(Student(row, run_log))
 
     #Create Events
     print("Creating events from student arrivals and departures\n")
@@ -301,8 +291,7 @@ def main():
                      col_num = col_num + 1
 
     print("Closing files")
-    attendance_wb.close()
-#    run_log_ws.close()
+    scheduling_data_sheets.close_workbooks()
     run_wb.save(run_wb_path)
     run_wb.close()
     print("Launching Excel")
