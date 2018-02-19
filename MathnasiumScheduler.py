@@ -31,15 +31,12 @@
 #       return to 10:30 in a matter of minutes. How many minutes are tolerable?
 #       Default: 6 minutes per hour.
 
-import csv
 import math
 import os
 import os.path
 from datetime import datetime
-from tkinter import Tk, filedialog, simpledialog
-from openpyxl import Workbook, worksheet, load_workbook
-import Event
-import Student
+from tkinter import Tk, simpledialog
+from openpyxl import Workbook
 from Event import Event
 from Instructor import Instructor
 from Student import Student
@@ -56,8 +53,9 @@ def main():
     default_directory = "C:\\ProgramData\\MathnasiumScheduler"
     FILEOPENOPTIONS = dict(defaultextension='.csv', filetypes=[('XLSX', '*.xlsx'), ('CSV file', '*.csv')])
     # Todo-jerry add center name picklist, get center names from configuraton file
-    center_name = simpledialog.askstring("Name prompt", "Enter Center Name")
-    scheduling_data_sheets = Importer(run_time, default_directory, center_name, FILEOPENOPTIONS) #load the working data
+#    center_name = simpledialog.askstring("Name prompt", "Enter Center Name")
+    center_name = "aaaa.TestRun"
+    importer = Importer().import_all(run_time, default_directory, center_name, FILEOPENOPTIONS)
 
     #Create Schedule Workbook
     # Create Run Workbook
@@ -71,40 +69,22 @@ def main():
     run_log_ws = run_wb.create_sheet("Runlog", index=4)
     #ToDo Write run_log to run_log_ws
     run_log = []
-
-    # Open Log File
-#    directory_warnings = default_directory + "\\Warnings"
-#   if not os.path.exists(directory_warnings): os.makedirs(directory_warnings)
-#    logfile_name = directory_warnings + "\\Forecast Warnings.csv"
-#    run_log_ws = open(logfile_name, 'w')
-#    print("Opened ", logfile_name)
-
-    Instructor.initialize(scheduling_data_sheets.instructor_availability_ws,
-                          scheduling_data_sheets.config_ws,
-                          run_log)
-
-    #Create Students
-    print("Creating students from Student Attendance Report\n")
-    students = []
-    student_ws = scheduling_data_sheets.attendance_ws  #attendance_wb.active
-    first_row = 2 #skip the headers
-    last_row = student_ws.max_row
-    last_col = student_ws.max_column
-    for row in student_ws.iter_rows(min_row = first_row, max_col = last_col, max_row=last_row):
-        students.append(Student(row, run_log))
+    instructors = Instructor.create_instructors(run_log)
+    students = Student.initialize_students(importer.attendance_ws, importer.student_data_ws, run_log)
 
     #Create Events
     print("Creating events from student arrivals and departures\n")
     events = []
-    for each_student in students:
-        events.append(Event('Arrival', each_student.arrivalTime, each_student))
-        events.append(Event('Departure', each_student.departureTime, each_student))
+    for each_student in Student.students:
+        events.append(Event('Arrival', each_student.arrival_time, each_student))
+        events.append(Event('Departure', each_student.departure_time, each_student))
     events.sort()
 
     #Executing Events
     print("Executing events and collecting information")
     # Gather events by week day
-    # define days consistent with datetime.weekday() - - - there has to be a better way than this
+    #ToDo refactor this into Common and use common
+    # define days consistent with datetime.weekday()
     mon = 0
     tue = 1
     wed = 2
@@ -116,14 +96,14 @@ def main():
     # Group events by day
     event_groups = {sun: [], mon: [], tue: [], wed: [], thu: [], fri: [], sat: []}
     for each_event in events:
-        event_groups[each_event.eventTime.weekday()].append(each_event)
+        event_groups[each_event.event_time.weekday()].append(each_event)
 
     print("\tDetermining cost of each day")
     costsOfEventGroups = {}
     for each_day in event_groups.keys():
         cost = 0.0
         for each_event in event_groups[each_day]:
-            if each_event.isArrivalEvent: cost = cost + each_event.cost()
+            if each_event.is_arrival_event: cost = cost + each_event.cost()
         costsOfEventGroups[each_day] = round(cost, 1)
         print("\t\tDay: ", each_day, "Cost: ", costsOfEventGroups[each_day])
 
@@ -133,50 +113,50 @@ def main():
         event_groups[each_day].sort()
         instructorsMinimum = 2.0  # the minimum staffing level
         instructorsRequired = 0.0  # actual number of instructors required to meet student demand
-        eventnumber = 1  # first event number
-        studentcount = 0  # start with zero students
+        event_number = 1  # first event number
+        student_count = 0  # start with zero students
         for each_event in event_groups[each_day]:
             # Set event number
-            each_event.eventNumber = eventnumber
+            each_event.event_number = event_number
             # Set event's previous and next events
-            if eventnumber != 1: each_event.prev = events[events.index(each_event) - 1]
-            if eventnumber != len(event_groups[each_day]): each_event.next = event_groups[each_day][
+            if event_number != 1: each_event.prev = events[events.index(each_event) - 1]
+            if event_number != len(event_groups[each_day]): each_event.next = event_groups[each_day][
                 event_groups[each_day].index(each_event) + 1]
-            eventnumber = eventnumber + 1  # next event number
+            event_number = event_number + 1  # next event number
             # Maintain student count
-            if (each_event.isArrivalEvent):
-                studentcount = studentcount + 1
-            elif (each_event.isDepartureEvent):
-                studentcount = studentcount - 1
-            each_event.studentCount = studentcount
+            if (each_event.is_arrival_event):
+                student_count = student_count + 1
+            elif (each_event.is_departure_event):
+                student_count = student_count - 1
+            each_event.student_count = student_count
             # Compute/maintain the actual number of instructors required
             instructorsRequired = instructorsRequired + each_event.cost()
             # Compute/maintain the number of instructors to staff (minimum is instructorsMinimum)
-            each_event.instructorCount = max(instructorsMinimum, math.ceil(instructorsRequired))
+            each_event.instructor_count = max(instructorsMinimum, math.ceil(instructorsRequired))
 
         print("\t\tCollecting Instructor Change Events")
         instructor_change_events = []
         for each_event in event_groups[each_day]:
-            if each_event.isInstructorChangeEvent():
+            if each_event.is_instructor_change_event():
                 instructor_change_events.append(each_event)
 
         print("\t\tMarking Churn Events")
         tolerance = 360  # seconds (6 minutes)
         for i in range(len(instructor_change_events) - 1):
             event = instructor_change_events[i]
-            nextEvent = instructor_change_events[i + 1]
-            event.isChurnEvent = event.isPeakEvent() and nextEvent.isValleyEvent() \
-                                 and (nextEvent.eventTime - event.eventTime).seconds < tolerance
+            next_event = instructor_change_events[i + 1]
+            event.isChurnEvent = event.is_peak_event() and next_event.is_valley_event() \
+                                 and (next_event.event_time - event.event_time).seconds < tolerance
 
         print("\t\tScheduling Instructors")
-        instructors = Instructor.instructors
+#        instructors = Instructor.instructors
         instructors.sort()
         unscheduled_instructors = instructors
         scheduled_instructors = []
         dateChangeEvents = 0
 
         for each_event in event_groups[each_day]:
-            if each_event.isDateChangeEvent():
+            if each_event.is_date_change_event():
                 dateChangeEvents = dateChangeEvents + 1
                 # Schedule minimum number of instructors needed to open
                 count_scheduled = 0
@@ -199,8 +179,8 @@ def main():
                     this_instructor.departWork(each_event)
                     departed_instructors.append(this_instructor)
 
-            instructor_change_needed = each_event.instructorCount - len(scheduled_instructors)
-            if not each_event.isChurnEvent and instructor_change_needed > 0:
+            instructor_change_needed = each_event.instructor_count - len(scheduled_instructors)
+            if not each_event.is_churn_event and instructor_change_needed > 0:
                 # Schedule available instructors
 #                print("\t\t\tSchedule Instructor")
                 count_scheduled = 0
@@ -219,7 +199,7 @@ def main():
                 # Remove newly scheduled instructors from unscheduled list
                 for i in instructors_changed: unscheduled_instructors.remove(i)
 
-            if not each_event.isChurnEvent and instructor_change_needed < 0:
+            if not each_event.is_churn_event and instructor_change_needed < 0:
                 # Unschedule instructors
 #                print("\t\t\tUnschedule Instructor")
                 count_unscheduled = 0
@@ -235,7 +215,7 @@ def main():
                 for i in instructors_changed: scheduled_instructors.remove(i)
 
             # Finalize schedules after last departure or final event of the day
-            if (each_event == event_groups[each_day][len(event_groups[each_day]) - 1]) or each_event.next.isDateChangeEvent():
+            if (each_event == event_groups[each_day][len(event_groups[each_day]) - 1]) or each_event.next.is_date_change_event():
                 instructors_changed = []
                 for this_instructor in scheduled_instructors:
                     this_instructor.isScheduled = False
@@ -247,7 +227,7 @@ def main():
     Reporter().write_all(events, instructors, forecast_detailed_ws, forecast_summary_ws, schedule_by_name_ws)
 
     print("Closing files")
-    scheduling_data_sheets.close_workbooks()
+    Importer().close_workbooks()
     run_wb.save(run_wb_path)
     run_wb.close()
     print("Launching Excel")

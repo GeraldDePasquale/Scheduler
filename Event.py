@@ -1,85 +1,77 @@
-import csv
-import time
-from datetime import datetime, date, timedelta
-import math
-
-
-
 class Event:
 
-    """Mathnasium arrivals, departures, and cost"""
     events = []
     instructorChangeEvents = []
     peakEvents = []
     churnEvents = []
     
-    def __init__(self, eventType=None, eventTime=None, studentObject=None, prev = None, next=None, churnTolerance=None):
-        if (eventTime != None) and (eventType != None):
-            self.student = studentObject.name
-            self.grade = studentObject.grade
-            self.eventTime = eventTime
-            self.eventType = eventType
-            self.studentObject = studentObject
+    def __init__(self, event_type=None, event_time=None, student_object=None, prev = None, next=None, churn_tolerance=None):
+        if (event_time != None) and (event_type != None):
+            self.student = student_object.name
+            self.grade = student_object.grade
+            self.event_time = event_time
+            self.event_type = event_type
+            self.student_object = student_object
             self.prev = prev
             self.next = next
-            self.eventNumber = 0
-            self.isArrivalEvent = eventType == 'Arrival'
-            self.isDepartureEvent = eventType == 'Departure'
-            self.instructorCount = 0 #instructor count after event
-            self.studentCount = 0 #student count after the event
-            self.isChurnEvent = False #set externally by event processor
-            self.churnTolerance = 600 # 600 seconds (10 minutes)
+            self.event_number = 0
+            self.is_arrival_event = event_type == 'Arrival'
+            self.is_departure_event = event_type == 'Departure'
+            self.instructor_count = 0 #instructor count after event
+            self.student_count = 0 #student count after the event
+            self.is_churn_event = False #set externally by event processor
+            self.churn_tolerance = 600 # 600 seconds (10 minutes) # Todo move to config file
             self.events.append(self)
 
-    def __lt__(self,other):
-        return self.eventTime < other.eventTime
+    def __lt__(self, other):
+        return self.event_time < other.event_time
 
     def __str__(self):
-        return (str (self.eventNumber) + ',' + str(self.student) + ','
-                + str(self.grade) + ',' + str(self.eventType) \
-                + ',' + str(self.eventTime) + ',' + str(self.weekday()) \
-                + ',' + str(self.studentCount) + ',' + str(self.studentInstructorRatio()) \
-                + ',' + str(self.instructorCount) + '\n')
+        return (str (self.event_number) + ',' + str(self.student) + ','
+                + str(self.grade) + ',' + str(self.event_type) \
+                + ',' + str(self.event_time) + ',' + str(self.weekday()) \
+                + ',' + str(self.student_count) + ',' + str(self.student_instructor_ratio()) \
+                + ',' + str(self.instructor_count) + '\n')
     def __print__(self):
-        print(self.eventNumber, self.student, self.grade, self.eventType, \
-              self.eventTime, self.weekday(), self.studentCount, \
-              self.studentInstructorRatio(), self.instructorCount)
+        print(self.event_number, self.student, self.grade, self.event_type, \
+              self.event_time, self.weekday(), self.student_count, \
+              self.student_instructor_ratio(), self.instructor_count)
 
     def tuple(self):
-        return [self.eventNumber, self.student, self.grade, self.eventType,
-                self.eventTime, self.weekday(), self.studentCount,
-                self.studentInstructorRatio(), self.instructorCount]
+        return [self.event_number, self.student, self.grade, self.event_type,
+                self.event_time, self.weekday(), self.student_count,
+                self.student_instructor_ratio(), self.instructor_count]
 
     def sort(self):
         return self.events.sort()
 
     def cost(self):
-        if self.eventType == 'Arrival':
-            return round(self.studentObject.cost(),4)
-        elif self.eventType == 'Departure':
-            return -round(self.studentObject.cost(),4)
+        if self.event_type == 'Arrival':
+            return round(self.student_object.cost, 4)
+        elif self.event_type == 'Departure':
+            return -round(self.student_object.cost, 4)
 
     def weekday(self):
         daysOfWeek = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
-        aWeekday = daysOfWeek[self.eventTime.date().weekday()]
+        aWeekday = daysOfWeek[self.event_time.date().weekday()]
         return aWeekday
 
-    def studentInstructorRatio(self):
-        return round(self.studentCount/self.instructorCount, 1)
+    def student_instructor_ratio(self):
+        return round(self.student_count / self.instructor_count, 1)
 
-    def isDateChangeEvent(self):
+    def is_date_change_event(self):
         if self.prev is None: return True
         return self.prev.weekday() != self.weekday()
 
-    def isInstructorChangeEvent(self):
+    def is_instructor_change_event(self):
         if self.prev is None:return True
-        return self.prev.instructorCount != self.instructorCount
+        return self.prev.instructor_count != self.instructor_count
  
-    def isPeakEvent(self):
-        return self.isInstructorChangeEvent() and self.isArrivalEvent
+    def is_peak_event(self):
+        return self.is_instructor_change_event() and self.is_arrival_event
 
-    def isValleyEvent(self):
-        return self.isInstructorChangeEvent() and self.isDepartureEvent
+    def is_valley_event(self):
+        return self.is_instructor_change_event() and self.is_departure_event
 
     def is_summary_event(self):
-        return (not self.isChurnEvent and (self.isDateChangeEvent() or self.isInstructorChangeEvent()))
+        return (not self.is_churn_event and (self.is_date_change_event() or self.is_instructor_change_event()))

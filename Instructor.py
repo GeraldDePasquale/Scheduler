@@ -1,5 +1,6 @@
 import time
 from datetime import datetime, time
+from Importer import Importer
 
 directory = "C:\\ProgramData\\MathnasiumScheduler"
 FILEOPENOPTIONS = dict(defaultextension='.csv', filetypes=[('XLSX', '*.xlsx'), ('CSV file', '*.csv')])
@@ -13,8 +14,6 @@ fri = 4
 sat = 5
 sun = 6
 
-log_file = None
-config_ws = None
 instructors = []
 initialized = False
 unavailable = time(0, 0)
@@ -31,66 +30,84 @@ instructionHours = {sun: [], \
 # number of virtual instructors (move to config file)
 virtual_instructors = 10
 
+
 class Instructor:
-    def __init__(self, row=None, prev=None, next=None):
-        if row is not None: #otherwise it's a virtual instructor
-            self.prev = prev
-            self.next = next
 
-            # define work schedule
-            self.schedule = {sun: [], mon: [], tue: [], wed: [], thu: [], fri: [], sat: []}
+    name = None
+    schedule = None
+    email_address = None
+    availability = None
+    availability_reported = None
+    rank = None
+    cost = 15
+    max_hours_per_week = 20
+    min_hours_per_day = 2
+    work_day_preferences = {sun: 0, mon: 2, tue: 3, wed: 4, thu: 5, fri: 6, sat: 7}
+    dayStrings = {sun: "Sunday", mon: "Monday", tue: "Tuesday", \
+                           wed: "Wednesday", thu: "Thursday", fri: "Friday", \
+                           sat: "Saturday"}
+    isScheduled = False
 
-            # set instructor name
-            self.availability_reported = row[0].value
-            self.email_address = row[1].value
-            self.name = row[2].value
+    @staticmethod
+    def create_real_instructor_from_row(log_file, row=None):
+        real_instructor = Instructor()
 
-            # set instructors hours of availability based upon the lines in the InstructorAvailability input file
-            self.availability = {sun: (time(0, 0), time(0, 0)), \
-                                 mon: (row[5].value, row[6].value), \
-                                 tue: (row[8].value, row[9].value), \
-                                 wed: (row[11].value, row[12].value), \
-                                 thu: (row[14].value, row[15].value), \
-                                 fri: (time(0, 0), time(0, 0)), \
-                                 sat: (row[17].value, row[18].value)}
+        # define work schedule
+        real_instructor.schedule = {sun: [], mon: [], tue: [], wed: [], thu: [], fri: [], sat: []}
 
-            # set rank
-            self.rank = 999 #rank found
-            #find row of the instructor, then assign rank from cell
-            #cross references name in availability file to name in configuration sheet then assigns
-            first_row = 2  # skip the headers
-            last_row = Instructor.config_ws.max_row
-            last_col = Instructor.config_ws.max_column
-            for row in Instructor.config_ws.iter_rows(min_row=first_row, max_col=last_col, max_row=last_row):
-                #does my name match the name in the configuration file? If so, set rank.
-                if self.name == row[0].value:
-                    self.rank = row[2].value
+        # set instructor name
+        real_instructor.availability_reported = row[0].value
+        real_instructor.email_address = row[1].value
+        real_instructor.name = row[2].value
 
-             # set cost
-            self.cost = 15
+        # set instructors hours of availability based upon the lines in the InstructorAvailability input file
+        real_instructor.availability = {sun: (time(0, 0), time(0, 0)), \
+                             mon: (row[5].value, row[6].value), \
+                             tue: (row[8].value, row[9].value), \
+                             wed: (row[11].value, row[12].value), \
+                             thu: (row[14].value, row[15].value), \
+                             fri: (time(0, 0), time(0, 0)), \
+                             sat: (row[17].value, row[18].value)}
 
-            # set max hours per week
-            self.maxHrsPerWeek = 20
+        # set rank
+        real_instructor.rank = 999 #rank found
+        #find row of the instructor, then assign rank from cell
+        #cross references name in availability file to name in configuration sheet then assigns rank
+        first_row = 2  # skip the headers
+        last_row = Importer.config_ws.max_row
+        last_col = Importer.config_ws.max_column
+        for row in Importer.config_ws.iter_rows(min_row=first_row, max_col=last_col, max_row=last_row):
+            #does my name match the name in the configuration file? If so, set rank.
+            if real_instructor.name == row[0].value:
+                real_instructor.rank = row[2].value
 
-            # set min hours per day
-            self.minHrsPerDay = 2
+         # set cost
+        real_instructor.cost = 15
 
-            # set work day preferences
-            self.workDayPreferences = {sun: 0, mon: 2, tue: 3, wed: 4, thu: 5, fri: 6, sat: 7}
-            # set dayofweek strings
-            self.dayStrings = {sun: "Sunday", mon: "Monday", tue: "Tuesday", \
-                               wed: "Wednesday", thu: "Thursday", fri: "Friday", \
-                               sat: "Saturday"}
+        # set max hours per week
+        real_instructor.maxHrsPerWeek = 20
 
-            # set isSchedule flag - this variable is set by the scheduling process
-            self.isScheduled = False
+        # set min hours per day
+        real_instructor.minHrsPerDay = 2
 
-    @classmethod
-    def virtual(cls, index=1):
-        virtual_instructor = cls()
+        # set work day preferences
+        real_instructor.workDayPreferences = {sun: 0, mon: 2, tue: 3, wed: 4, thu: 5, fri: 6, sat: 7}
+
+        # set dayofweek strings
+        real_instructor.dayStrings = {sun: "Sunday", mon: "Monday", tue: "Tuesday", \
+                           wed: "Wednesday", thu: "Thursday", fri: "Friday", \
+                           sat: "Saturday"}
+
+        # set isSchedule flag - this variable is set by the scheduling process
+        real_instructor.isScheduled = False
+        return real_instructor
+
+    @staticmethod
+    def create_virtual_instructor(index=1):
+        virtual_instructor = Instructor()
         virtual_instructor.schedule = {sun: [], mon: [], tue: [], wed: [], thu: [], fri: [], sat: []}
         virtual_instructor.availability_reported = datetime.now()
-        virtual_instructor.email_address = "stafford@mathnasium.com"
+        virtual_instructor.email_address = "stafford@mathnasium.com" # Todo remove hard coded email address
         virtual_instructor.name = 'Gap '+ str(index)
         virtual_instructor.availability = instructionHours
         virtual_instructor.rank = 999
@@ -104,30 +121,29 @@ class Instructor:
         virtual_instructor.isScheduled = False
         return virtual_instructor
 
-    @classmethod
-    def initialize(cls, availability_ws, config_ws, run_log):
-        Instructor.log_file = run_log
-        Instructor.config_ws = config_ws
+    @staticmethod
+    def create_instructors(run_log):
 
-        #Update Availability Work Sheet: add default time time(0,0) where time is absent
+        # Update Availability Work Sheet: When instructor not available, change none to time(0,0)
         first_row = 2  # skip the headers
-        last_row = availability_ws.max_row
-        last_col = availability_ws.max_column
-        for row in availability_ws.iter_rows(min_row=first_row, max_col=last_col, max_row=last_row):
+        last_row = Importer.instructor_availability_ws.max_row
+        last_col = Importer.instructor_availability_ws.max_column
+        for row in Importer.instructor_availability_ws.iter_rows(min_row=first_row, max_col=last_col, max_row=last_row):
             for i in [5,6,8,9,11,12,14,15,17,18]:
                 if row[i].value == None: row[i].value = time(0,0)
         for eachInstructor in instructors: print(eachInstructor.name)
 
         # Create Instructors
         Instructor.instructors = []
-        for row in availability_ws.iter_rows(min_row=first_row, max_col=last_col, max_row=last_row):
-            Instructor.instructors.append(Instructor(row, Instructor.log_file))
+        for row in Importer.instructor_availability_ws.iter_rows(min_row=first_row, max_col=last_col, max_row=last_row):
+            Instructor.instructors.append(Instructor.create_real_instructor_from_row(run_log, row))
         # Add Virtual Instructors to identify periods that cannot covered by existing staff
         for i in range (1, virtual_instructors):
-            Instructor.instructors.append(Instructor.virtual(i))
+            Instructor.instructors.append(Instructor.create_virtual_instructor(i))
         for eachInstructor in Instructor.instructors: print("Instructor: ", eachInstructor.name,
                                                                      "Rank: ", eachInstructor.rank)
         print("Created Instructors")
+        return Instructor.instructors
 
     # define instructor sort
     def __lt__(self, other):
@@ -139,20 +155,14 @@ class Instructor:
     def __print__(self):
         print(str(self.name, self.rank))
 
-    def prev(self):
-        return self.prev
-
-    def next(self):
-        return self.next
-
     # weekdayString(self, dayofweek) returns string representation of the day
     def dayString(self, integer):
         return self.dayStrings[integer]
 
     # isAvailable returns true if the instructor is available to work at the time of the event
     def isAvailable(self, event):
-        dayNeeded = event.eventTime.weekday()
-        timeNeeded = event.eventTime.time()
+        dayNeeded = event.event_time.weekday()
+        timeNeeded = event.event_time.time()
         imScheduled = self.isScheduled
         availableStartTime = self.availability[dayNeeded][0]
         availableStopTime = self.availability[dayNeeded][1]
@@ -163,7 +173,7 @@ class Instructor:
 
     # isAvailableToOpen returns true if the instructor is available to start work when the center opens
     def isAvailableToOpen(self, event):
-        dayNeeded = event.eventTime.weekday()
+        dayNeeded = event.event_time.weekday()
         timeNeeded = instructionHours[dayNeeded][0]
         imScheduled = self.isScheduled
         myStartTime = self.availability[dayNeeded][0]
@@ -175,34 +185,34 @@ class Instructor:
 
     # startWork adds the start work event time to the instructor's work schedule
     def startWork(self, event):
-        dayNeeded = event.eventTime.weekday()
-        timeNeeded = event.eventTime.time()
+        dayNeeded = event.event_time.weekday()
+        timeNeeded = event.event_time.time()
         self.schedule[dayNeeded].append(timeNeeded)
         self.isScheduled = True
 
     # startWorkWhenOpen adds start at open time to the instructor's work schedule
     def startWorkWhenOpen(self, event):
-        dayNeeded = event.eventTime.weekday()
+        dayNeeded = event.event_time.weekday()
         timeNeeded = instructionHours[dayNeeded][0]
         self.schedule[dayNeeded].append(timeNeeded)
         self.isScheduled = True
 
     # stopWork adds the stop work event time to the instructor's work schedule
     def stopWork(self, event):
-        self.schedule[event.eventTime.weekday()].append(event.eventTime.time())
+        self.schedule[event.event_time.weekday()].append(event.event_time.time())
         self.isScheduled = False
 
     # mustDepart returns true if the event time exceeds the instructors availability
     def mustDepart(self, event):
-        dayNeeded = event.eventTime.weekday()
-        timeNeeded = event.eventTime.time()
+        dayNeeded = event.event_time.weekday()
+        timeNeeded = event.event_time.time()
         myStopTime = self.availability[dayNeeded][1]
         result = (timeNeeded >= myStopTime)
         return result
 
     # departWork adds stop work event but leaves instructor in isScheduled state
     def departWork(self, event):
-        self.schedule[event.eventTime.weekday()].append(event.eventTime.time())
+        self.schedule[event.event_time.weekday()].append(event.event_time.time())
         self.isScheduled = True
 
     # hoursScheduled returns the number of hours the employee is scheduled to work

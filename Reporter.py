@@ -1,6 +1,5 @@
+class Reporter():
 
-
-class Reporter:
     forecast_headers = ["Event #", "Student Name", "Grade", "Event", "Time", "Day",
                         "Student Count", "Student:Instructor", "Instructors Required"]
     schedule_headers = ["Instructor Name", "Day", "Start Time", "Stop Time"]
