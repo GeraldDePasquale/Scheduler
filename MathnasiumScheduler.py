@@ -228,6 +228,7 @@ def main():
 
     print("Closing files")
     Importer().close_workbooks()
+    Reporter().format_sheets(run_wb)
     run_wb.save(run_wb_path)
     run_wb.close()
     print("Launching Excel")

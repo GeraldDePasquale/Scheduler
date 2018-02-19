@@ -64,3 +64,15 @@ class Reporter():
         self.write_summary_forecast(events, forecast_summary_ws)
         self.write_detailed_forecast(events, forecast_detailed_ws)
         self.write_by_name_schedule(instructors, schedule_by_name_ws)
+
+    @staticmethod
+    def format_sheets(workbook):
+        for worksheet in workbook.worksheets:
+            dims = {}
+            for row in worksheet.rows:
+                for cell in row:
+                    if cell.value:
+                        dims[cell.column] = max((dims.get(cell.column, 0), len(str(cell.value))))
+            gutter = 2 # widen the cell a bit more
+            for col, value in dims.items():
+                worksheet.column_dimensions[col].width = value + gutter
