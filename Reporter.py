@@ -15,7 +15,7 @@ class Reporter():
         cls.write_by_name_schedule(instructors, schedule_by_name_ws)
 
     def write_detailed_forecast(self, events, forecast_detailed_ws):
-        print("\n Writing Schedule, Summary Forecast, Detailed Forecast")
+        print("\nWriting Schedule, Summary Forecast, Detailed Forecast")
         forecast_headers = ["Event #", "Student Name", "Grade", "Event", "Time", "Day",
                             "Student Count", "Student:Instructor", "Instructors Required"]
         row_num = 1

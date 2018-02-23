@@ -42,14 +42,18 @@ from Instructor import Instructor
 from Student import Student
 from Importer import Importer
 from Reporter import Reporter
-
+#from Gmailer import Gmailer # ToDo Create Gmailer class from Gmailer script
+import httplib2
+from googleapiclient.discovery import build
+from oauth2client.client import AccessTokenCredentials
+from GoogleCredentials import GoogleCredentials
 
 def main():
 
     root = Tk()
     root.withdraw()
     run_time = datetime.now().strftime('%Y%m%d%H%M') # used for file extensions, makes sorting easy
-    print("Mathnasium Scheduler Starts")
+    print("\nMathnasium Scheduler Launched")
     default_directory = "C:\\ProgramData\\MathnasiumScheduler"
     FILEOPENOPTIONS = dict(defaultextension='.csv', filetypes=[('XLSX', '*.xlsx'), ('CSV file', '*.csv')])
     # Todo-jerry add center name picklist, get center names from configuraton file
@@ -73,7 +77,7 @@ def main():
     students = Student.initialize_students(importer.attendance_ws, importer.student_data_ws, run_log)
 
     #Create Events
-    print("Creating events from student arrivals and departures\n")
+    print("\nCreating events from student arrivals and departures\n")
     events = []
     for each_student in Student.students:
         events.append(Event('Arrival', each_student.arrival_time, each_student))
@@ -226,13 +230,19 @@ def main():
 
     Reporter().write_all(events, instructors, forecast_detailed_ws, forecast_summary_ws, schedule_by_name_ws)
 
-    print("Closing files")
+    print("\nFormating and Closing Workbooks")
     Importer().close_workbooks()
     Reporter().format_sheets(run_wb)
     run_wb.save(run_wb_path)
     run_wb.close()
-    print("Launching Excel")
+
+    print("\nLaunching Excel")
     os.system("start excel " + run_wb_path )
-    print("Done")
+
+    print("\nEmailing Schedules to Instructors")
+    # Todo Refactor Gmailer into class that can be used to send schedules out
+    # Todo code up individual schedule emails including mapping to email addresses and instructor first names.
+
+    print("\nScheduler Run Completed")
 
 if __name__ == '__main__': main()

@@ -36,7 +36,7 @@ class Importer:
 #                                                                  **FILEOPENOPTIONS)
         Importer.attendance_wb = load_workbook(student_attendance_file_name, data_only=True, guess_types=True)
         Importer.attendance_ws = Importer.attendance_wb.active
-        print("Imported Attendance Report", student_attendance_file_name)
+        print("\nImported Attendance Report", student_attendance_file_name)
 
         # Load Student Report
         # Source: Radius>>Reports>>Student  Type: .xlsx
@@ -45,7 +45,7 @@ class Importer:
 #                                                            **FILEOPENOPTIONS)
         Importer.student_data_wb = load_workbook(student_data_file_name, data_only=True, guess_types=True)
         Importer.student_data_ws = Importer.student_data_wb.active
-        print("Imported Student Report", student_data_file_name)
+        print("\nImported Student Report", student_data_file_name)
 
         # Load Configuration
 #        config_file_name = filedialog.askopenfilename(parent=root, initialdir=directory,
@@ -54,7 +54,7 @@ class Importer:
         Importer.config_wb = load_workbook(config_file_name, data_only=True, guess_types=True)
         Importer.config_ws = Importer.config_wb.active
 
-        print("Loaded ", config_file_name)
+        print("\nLoaded ", config_file_name)
 
         # Load Instructor Availabilty
 #        instructor_availability_file_name = filedialog.askopenfilename(parent=root, initialdir=directory,
@@ -62,7 +62,7 @@ class Importer:
 #                                                                       **FILEOPENOPTIONS)
         Importer.instructor_availability_wb = load_workbook(instructor_availability_file_name, data_only=True, guess_types=True)
         Importer.instructor_availability_ws = Importer.instructor_availability_wb.active
-        print("Loaded ", instructor_availability_file_name)
+        print("\nLoaded ", instructor_availability_file_name)
         return importer
 
     @staticmethod

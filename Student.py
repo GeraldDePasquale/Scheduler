@@ -19,7 +19,6 @@ class Student:
     grade_dictionary = {}
     cost = None
 
-
     def __lt__(self, other):
         return self.arrival_time < other.arrivalTime
 
@@ -64,7 +63,7 @@ class Student:
     @staticmethod
     def initialize_students(attendance_ws, student_data_ws, run_log_ws):
         Student().create_grade_dictionary_from_ws(student_data_ws)
-        print("Creating students from Student Attendance Report\n")
+        print("\nCreating students from Student Attendance Report")
         first_row = 2  # skip the headers
         last_row = attendance_ws.max_row
         last_col = attendance_ws.max_column

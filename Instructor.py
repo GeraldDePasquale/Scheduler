@@ -135,14 +135,14 @@ class Instructor:
 
         # Create Instructors
         Instructor.instructors = []
+        print("\nCreating Instructors (from Instructor Availability and Configuration File")
         for row in Importer.instructor_availability_ws.iter_rows(min_row=first_row, max_col=last_col, max_row=last_row):
             Instructor.instructors.append(Instructor.create_real_instructor_from_row(run_log, row))
         # Add Virtual Instructors to identify periods that cannot covered by existing staff
         for i in range (1, virtual_instructors):
             Instructor.instructors.append(Instructor.create_virtual_instructor(i))
-        for eachInstructor in Instructor.instructors: print("Instructor: ", eachInstructor.name,
+        for eachInstructor in Instructor.instructors: print("\tInstructor: ", eachInstructor.name,
                                                                      "Rank: ", eachInstructor.rank)
-        print("Created Instructors")
         return Instructor.instructors
 
     # define instructor sort
