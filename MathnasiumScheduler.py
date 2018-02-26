@@ -57,8 +57,8 @@ def main():
     default_directory = "C:\\ProgramData\\MathnasiumScheduler"
     FILEOPENOPTIONS = dict(defaultextension='.csv', filetypes=[('XLSX', '*.xlsx'), ('CSV file', '*.csv')])
     # Todo-jerry add center name picklist, get center names from configuraton file
-#    center_name = simpledialog.askstring("Name prompt", "Enter Center Name")
-    center_name = "aaaa.TestRun"
+    center_name = simpledialog.askstring("Name prompt", "Enter Center Name")
+#    center_name = "aaaa.TestRun" #Eliminates need to select files for successive test rums
     importer = Importer().import_all(run_time, default_directory, center_name, FILEOPENOPTIONS)
 
     #Create Schedule Workbook
