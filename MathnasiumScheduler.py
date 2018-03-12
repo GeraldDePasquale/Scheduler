@@ -42,7 +42,7 @@ from Instructor import Instructor
 from Student import Student
 from Importer import Importer
 from Reporter import Reporter
-#from Gmailer import Gmailer # ToDo Create Gmailer class from Gmailer script
+from Gmailer import Gmailer
 import httplib2
 from googleapiclient.discovery import build
 from oauth2client.client import AccessTokenCredentials
@@ -58,7 +58,7 @@ def main():
     FILEOPENOPTIONS = dict(defaultextension='.csv', filetypes=[('XLSX', '*.xlsx'), ('CSV file', '*.csv')])
     # Todo-jerry add center name picklist, get center names from configuraton file
     center_name = simpledialog.askstring("Name prompt", "Enter Center Name")
-#    center_name = "aaaa.TestRun" #Eliminates need to select files for successive test rums
+    # center_name = "aaaa.TestRun" #Eliminates need to select files for successive test rums
     importer = Importer().import_all(run_time, default_directory, center_name, FILEOPENOPTIONS)
 
     #Create Schedule Workbook
@@ -186,11 +186,12 @@ def main():
             instructor_change_needed = each_event.instructor_count - len(scheduled_instructors)
             if not each_event.is_churn_event and instructor_change_needed > 0:
                 # Schedule available instructors
-#                print("\t\t\tSchedule Instructor")
+                print("\t\t\tSchedule Instructor")
                 count_scheduled = 0
                 unscheduled_instructors.sort()
-#                print("Unscheduled Instructors: " + str(len(unscheduled_instructors)))
+                print("Unscheduled Instructors: " + str(len(unscheduled_instructors)))
                 while (count_scheduled < instructor_change_needed):
+                    # print('while')
                     # Find instructor and schedule instructor
                     instructors_changed = []
                     for this_instructor in unscheduled_instructors:
@@ -240,7 +241,7 @@ def main():
     os.system("start excel " + run_wb_path )
 
     print("\nEmailing Schedules to Instructors")
-    # Todo Refactor Gmailer into class that can be used to send schedules out
+#    Gmailer().send_instructor_schedules(instructors)
     # Todo code up individual schedule emails including mapping to email addresses and instructor first names.
 
     print("\nScheduler Run Completed")

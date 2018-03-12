@@ -62,19 +62,20 @@ def get_credentials():
       'location': 'Mathnasium of Stafford',
       'description': 'Your first event has been successfully scheduled.',
       'start': {
-        'dateTime': '2018-02-25T10:00:00-05:00',
+        'dateTime': '2018-03-01T10:00:00-05:00',
         'timeZone': 'America/New_York',
       },
       'end': {
-        'dateTime': '2018-02-25T14:00:00-05:00',
+        'dateTime': '2018-03-01T14:00:00-05:00',
         'timeZone': 'America/New_York',
       },
       'recurrence': [
         'RRULE:FREQ=DAILY;COUNT=2'
       ],
       'attendees': [
-        {'email': 'gerald.depasquale@gmail.com',
-         'email': 'kim.depasquale1@gmail.com'}
+        {'email': 'kim.depasquale1@gmail.com',  # Test Calendar
+         'email': 'gerald.depasquale@gmail.com'
+         }
       ],
       'reminders': {
         'useDefault': False,
@@ -84,8 +85,11 @@ def get_credentials():
         ],
       },
     }
+    # cal_id = 'https://calendar.google.com/calendar/ical/i4rquq7ujj528bstfbk1dviebs%40' + \
+    #          'group.calendar.google.com/private-f2a98c8b20e8791bee32b1504881baf9/basic.ics'
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('calendar', 'v3', http=http)
+    # test_event = service.events().insert(calendarId= cal_id, sendNotifications= True, body=test_event).execute()
     test_event = service.events().insert(calendarId='primary', sendNotifications= True, body=test_event).execute()
     print('Test Event created: %s' % (test_event.get('htmlLink')))
     return credentials

@@ -30,6 +30,17 @@ instructionHours = {sun: [], \
 # number of virtual instructors (move to config file)
 virtual_instructors = 10
 
+# center instruction hours
+twenty_four_hours = [time(0, 0), time(23, 59)]
+virtual_instructor_availability = \
+                    {sun: twenty_four_hours, \
+                     mon: twenty_four_hours, \
+                     tue: twenty_four_hours, \
+                     wed: twenty_four_hours, \
+                     thu: twenty_four_hours, \
+                     fri: twenty_four_hours, \
+                     sat: twenty_four_hours}
+
 
 class Instructor:
 
@@ -107,9 +118,9 @@ class Instructor:
         virtual_instructor = Instructor()
         virtual_instructor.schedule = {sun: [], mon: [], tue: [], wed: [], thu: [], fri: [], sat: []}
         virtual_instructor.availability_reported = datetime.now()
-        virtual_instructor.email_address = "stafford@mathnasium.com" # Todo remove hard coded email address
+        virtual_instructor.email_address = "stafford@mathnasium.com" # Todo remove hard coded email address?
         virtual_instructor.name = 'Gap '+ str(index)
-        virtual_instructor.availability = instructionHours
+        virtual_instructor.availability = virtual_instructor_availability
         virtual_instructor.rank = 999
         virtual_instructor.cost = 15
         virtual_instructor.maxHrsPerWeek = 100
@@ -237,5 +248,38 @@ class Instructor:
                 self.schedule[eachKey] = [self.adjustTime(myStartTime), self.adjustTime(myStopTime)]
         return self.schedule
 
-    def tuple(self, day):
+    def work_day_tuple(self, day):
         return [self.name, self.dayString(day), self.schedule[day][0], self.schedule[day][1]]
+
+     # create the an html message containing the instructor's schedule
+    def schedule_as_html_msg(self):
+        cr = '<br/>'
+        sp = ' '
+        fr = ' from '
+        to = ' to '
+        salutation = 'Feel free to call me at 540-907-9306 if you have any questions.' + cr + cr + 'Jerry'
+        msg = 'Dear' + sp + self.name + ',' + cr + cr + 'Here is your schedule:' + cr + cr
+        for eachKey in self.schedule.keys():
+            if self.schedule[eachKey]:
+                today = self.dayString(eachKey) + fr + str(self.schedule[eachKey][0]) + to + str(self.schedule[eachKey][1]) + cr
+                msg = msg + today
+        msg = msg + cr
+        msg = msg + salutation + cr
+        return msg
+
+   # create the a text message containing the instructor's schedule
+    def schedule_as_plain_msg(self):
+        cr = '\n'
+        sp = ' '
+        fr = ' from '
+        to = ' to '
+        salutation = 'Feel free to call me at 540-907-9306 if you have any questions.' + cr + cr + 'Jerry'
+        msg = 'Dear' + sp + self.name + ',' + cr + cr + 'Here is your schedule:' + cr + cr
+        for eachKey in self.schedule.keys():
+            if self.schedule[eachKey]:
+                today = self.dayString(eachKey) + fr + str(self.schedule[eachKey][0]) + to + str(self.schedule[eachKey][1]) + cr
+                msg = msg + today
+        msg = msg + cr
+        msg = msg + salutation + cr
+        return msg
+

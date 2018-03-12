@@ -56,7 +56,7 @@ class Reporter():
                 if each_instructor.schedule[each_day]:
                     row_num = row_num + 1
                     col_num = 1
-                    for datum in each_instructor.tuple(each_day):
+                    for datum in each_instructor.work_day_tuple(each_day):
                         schedule_by_name_ws.cell(row_num, col_num).value = datum
                         col_num = col_num + 1
 
