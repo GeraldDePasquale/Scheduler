@@ -8,6 +8,7 @@ from oauth2client import tools
 from oauth2client.file import Storage
 
 import datetime
+from Center import Center
 
 try:
     import argparse
@@ -37,11 +38,22 @@ if not credentials or credentials.invalid:
 
 class GoogleEventScheduler:
 
-    @staticmethod
+    def create_event_bodies(self, instructor, center):
+        #ToDo create event data from instructor_schedule
+        summary = instructor.name + '@' + center.name
+        location = center.location
+        description = 'You have bene scheduled to work today. Please be ready to serve students when your shift begins.'
+        time_zone = center.location
+        recurrence = 'RRULE:FREQ=DAILY;COUNT=1'
+        center_email =
+        event_bodies = []
+        return event_bodies
+
+
     def insert_event(start_time, end_time, email_address):
-        summary = 'Mathnasium Scheduler'
+        summary = 'Instructor_First_Name Work Event'
         location = 'Mathnasium of Stafford, 263 Garrisonville Road (Ste 104), Stafford, VA 22554'
-        description = 'Work Event'
+        description = 'You work today. Please be ready to serve students when your shift begins.'
         time_zone = 'America/New_York'
         recurrence = 'RRULE:FREQ=DAILY;COUNT=1'
         center_email = 'stafford@mathnasium.com'
@@ -63,5 +75,16 @@ class GoogleEventScheduler:
         }
         http = credentials.authorize(httplib2.Http())
         service = discovery.build('calendar', 'v3', http=http)
+        #ToDo add calendar id to configuration file to enable mapping and setting master schedule & employee events
         this_event = service.events().insert(calendarId='primary', sendNotifications= True, body=this_event).execute()
         return this_event
+
+    @staticmethod
+    def insert_events(instructors):
+        for instructor in instructors:
+            self create_events(instructor.schedule)
+
+
+
+if __name__ == '__main__':
+    main()

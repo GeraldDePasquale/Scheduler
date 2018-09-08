@@ -2,6 +2,7 @@ from tkinter import Tk, filedialog, simpledialog
 
 
 class Common:
+
     # define days consistent with datetime.weekday()
     def __init__(self):
         mon = 0

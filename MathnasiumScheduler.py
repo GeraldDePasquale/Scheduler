@@ -50,6 +50,7 @@ from GoogleCredentials import GoogleCredentials
 
 def main():
 
+    debug = False
     root = Tk()
     root.withdraw()
     run_time = datetime.now().strftime('%Y%m%d%H%M') # used for file extensions, makes sorting easy
@@ -58,7 +59,8 @@ def main():
     FILEOPENOPTIONS = dict(defaultextension='.csv', filetypes=[('XLSX', '*.xlsx'), ('CSV file', '*.csv')])
     # Todo-jerry add center name picklist, get center names from configuraton file
     center_name = simpledialog.askstring("Name prompt", "Enter Center Name")
-    # center_name = "aaaa.TestRun" #Eliminates need to select files for successive test rums
+    schedule_start_date = simpledialog.askstring("Schedule Start Prompt", "Enter Schedule Start Date (MM/DD/YY)")
+    # center_name = "aaaa.TestRun" #Eliminates need to select files for successive test runs
     importer = Importer().import_all(run_time, default_directory, center_name, FILEOPENOPTIONS)
 
     #Create Schedule Workbook
@@ -115,7 +117,7 @@ def main():
     for each_day in event_groups.keys():
         print("\n\tProcessing Day: ", str(each_day))
         event_groups[each_day].sort()
-        instructorsMinimum = 2.0  # the minimum staffing level
+        instructorsMinimum = 2.0  # ToDo remove hard coded variable the minimum staffing level
         instructorsRequired = 0.0  # actual number of instructors required to meet student demand
         event_number = 1  # first event number
         student_count = 0  # start with zero students
@@ -155,81 +157,89 @@ def main():
         print("\t\tScheduling Instructors")
 #        instructors = Instructor.instructors
         instructors.sort()
-        unscheduled_instructors = instructors
-        scheduled_instructors = []
+        if debug:
+            for eachInstructor in instructors: print(eachInstructor)
+        inactive_instructors = instructors
+        active_instructors = []
         dateChangeEvents = 0
 
         for each_event in event_groups[each_day]:
             if each_event.is_date_change_event():
                 dateChangeEvents = dateChangeEvents + 1
-                # Schedule minimum number of instructors needed to open
-                count_scheduled = 0
-                unscheduled_instructors.sort()
+                # Activate minimum number of instructors needed to open if necessary
+                active_instructor_count = 0
+                inactive_instructors.sort()
                 instructors_changed = []
-                for this_instructor in unscheduled_instructors:
-                    if this_instructor.isAvailableToOpen(each_event) and (count_scheduled < instructorsMinimum):
-                        count_scheduled = count_scheduled + 1
+                for this_instructor in inactive_instructors:
+                    if this_instructor.isAvailableToOpen(each_event) and (active_instructor_count < instructorsMinimum):
+                        active_instructor_count = active_instructor_count + 1
                         this_instructor.startWorkWhenOpen(each_event)
-                        scheduled_instructors.append(this_instructor)
+                        active_instructors.append(this_instructor)
                         # save pointers to instructors for removal from unscheduled list
                         instructors_changed.append(this_instructor)
-                for i in instructors_changed: unscheduled_instructors.remove(i)
+                for i in instructors_changed: inactive_instructors.remove(i)
 
             # Check for and remove departing Instructors
             departed_instructors = []
-            for this_instructor in scheduled_instructors:
+            for this_instructor in active_instructors:
                 departed = False
                 if this_instructor.mustDepart(each_event):
                     this_instructor.departWork(each_event)
                     departed_instructors.append(this_instructor)
 
-            instructor_change_needed = each_event.instructor_count - len(scheduled_instructors)
+            instructor_change_needed = each_event.instructor_count - len(active_instructors)
             if not each_event.is_churn_event and instructor_change_needed > 0:
                 # Schedule available instructors
-                print("\t\t\tSchedule Instructor")
-                count_scheduled = 0
-                unscheduled_instructors.sort()
-                print("Unscheduled Instructors: " + str(len(unscheduled_instructors)))
-                while (count_scheduled < instructor_change_needed):
+                # print("\t\t\tActivate Instructor")
+                active_instructor_count = 0
+                inactive_instructors.sort()
+                # print("Inactive Instructors: " + str(len(inactive_instructors)))
+                while (active_instructor_count < instructor_change_needed):
                     # print('while')
                     # Find instructor and schedule instructor
-                    instructors_changed = []
-                    for this_instructor in unscheduled_instructors:
-                        if this_instructor.isAvailable(each_event) and (count_scheduled < instructor_change_needed):
-                            count_scheduled = count_scheduled + 1
+                    instructors_changed = [] #ToDo inside the while loop (inconsistent see line 215)
+                    for this_instructor in inactive_instructors:
+                        if this_instructor.isAvailable(each_event) and (active_instructor_count < instructor_change_needed):
+                            active_instructor_count = active_instructor_count + 1
                             this_instructor.startWork(each_event)
-                            scheduled_instructors.append(this_instructor)
+                            active_instructors.append(this_instructor)
                             # Save pointers to newly scheduled instructors for removal from unscheduled list
                             instructors_changed.append(this_instructor)
-                # Remove newly scheduled instructors from unscheduled list
-                for i in instructors_changed: unscheduled_instructors.remove(i)
+                # Remove newly activated (scheduled) instructors from inactive list
+                for i in instructors_changed: inactive_instructors.remove(i)
 
             if not each_event.is_churn_event and instructor_change_needed < 0:
-                # Unschedule instructors
-#                print("\t\t\tUnschedule Instructor")
-                count_unscheduled = 0
-                instructors_changed = []
-                unscheduled_instructors.sort()
-                while count_unscheduled < abs(instructor_change_needed):
-                    for this_instructor in reversed(scheduled_instructors):
-                          if count_unscheduled < abs(instructor_change_needed):
-                            count_unscheduled = count_unscheduled + 1
+                # Deactivate instructors
+                # print("\t\t\tDeactivate Instructor")
+                deactivated_instructor_count = 0
+                instructors_deactivated = [] #ToDo outside the while loop (inconsistent see line 200)
+                active_instructors.sort()
+                # print("Printing Reversed Rank List")
+                # for this in reversed(active_instructors):
+                #     print(this.name, this.rank)
+                while deactivated_instructor_count < abs(instructor_change_needed):
+                    for this_instructor in reversed(active_instructors):
+                          if deactivated_instructor_count < abs(instructor_change_needed):
+                            deactivated_instructor_count = deactivated_instructor_count + 1
                             this_instructor.stopWork(each_event)
-                            unscheduled_instructors.append(this_instructor)
-                            instructors_changed.append(this_instructor)
-                for i in instructors_changed: scheduled_instructors.remove(i)
+                            inactive_instructors.append(this_instructor)
+                            instructors_deactivated.append(this_instructor)
+                for i in instructors_deactivated: active_instructors.remove(i)
 
             # Finalize schedules after last departure or final event of the day
             if (each_event == event_groups[each_day][len(event_groups[each_day]) - 1]) or each_event.next.is_date_change_event():
                 instructors_changed = []
-                for this_instructor in scheduled_instructors:
+                for this_instructor in active_instructors:
                     this_instructor.isScheduled = False
-                    unscheduled_instructors.append(this_instructor)
+                    inactive_instructors.append(this_instructor)
                     instructors_changed.append(this_instructor)
-                for i in instructors_changed: scheduled_instructors.remove(i)
-                for i in unscheduled_instructors: i.finalizeSchedule()
+                for i in instructors_changed: active_instructors.remove(i)
+                for i in inactive_instructors: i.finalizeSchedule()
 
     Reporter().write_all(events, instructors, forecast_detailed_ws, forecast_summary_ws, schedule_by_name_ws)
+
+    print("\nReview, edit, and approve schedules")
+    # Todo code to review, edit, and approve schedules
 
     print("\nFormating and Closing Workbooks")
     Importer().close_workbooks()
@@ -240,9 +250,13 @@ def main():
     print("\nLaunching Excel")
     os.system("start excel " + run_wb_path )
 
+    # Todo code up individual schedule emails including mapping to email addresses and instructor first names.
     print("\nEmailing Schedules to Instructors")
 #    Gmailer().send_instructor_schedules(instructors)
-    # Todo code up individual schedule emails including mapping to email addresses and instructor first names.
+
+    # Todo code up scheduling individual work events on master schedule calendar and instructor calendars.
+    print("\nAdding Work Events to Instructor Google Calendars")
+#    GoogleEventScheduler().insert_events(instructors)
 
     print("\nScheduler Run Completed")
 

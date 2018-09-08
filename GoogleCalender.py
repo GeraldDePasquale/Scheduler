@@ -46,52 +46,52 @@ def get_credentials():
         flow.user_agent = APPLICATION_NAME
         if flags:
             credentials = tools.run_flow(flow, store, flags)
-        else: # Needed only for compatibility with Python 2.6
-            credentials = tools.run(flow, store)
         print('Storing credentials to ' + credential_path)
-#    return credentials
+    return credentials
 
-#def schedule_test_event(service):
+def schedule_test_event(service, credentials):
     # Refer to the Python quickstart on how to setup the environment:
     # https://developers.google.com/google-apps/calendar/quickstart/python
     # Change the scope to 'https://www.googleapis.com/auth/calendar' and delete any
     # stored credentials.
 
     test_event = {
-      'summary': 'Mathnasium Scheduler',
-      'location': 'Mathnasium of Stafford',
-      'description': 'Your first event has been successfully scheduled.',
+      'summary': 'Test Person Work Event',
+      'location': 'Mathnasium of Stafford, 263 Garrisonville Road (Ste 104), Stafford, VA 22554',
+      'description': 'You are scheduled to work today. Please arrive 10 minutes early.',
       'start': {
-        'dateTime': '2018-03-01T10:00:00-05:00',
+        'dateTime': '2018-03-31T10:00:00-05:00',
         'timeZone': 'America/New_York',
       },
       'end': {
-        'dateTime': '2018-03-01T14:00:00-05:00',
+        'dateTime': '2018-03-31T14:00:00-05:00',
         'timeZone': 'America/New_York',
       },
       'recurrence': [
-        'RRULE:FREQ=DAILY;COUNT=2'
+        'RRULE:FREQ=WEEKLY;COUNT=2'
       ],
       'attendees': [
-        {'email': 'kim.depasquale1@gmail.com',  # Test Calendar
-         'email': 'gerald.depasquale@gmail.com'
+        {'email': 'stafford@mathnasium.com'
          }
       ],
       'reminders': {
         'useDefault': False,
         'overrides': [
           {'method': 'email', 'minutes': 24 * 60},
-          {'method': 'popup', 'minutes': 10},
+          {'method': 'popup', 'minutes': 60},
         ],
       },
     }
-    # cal_id = 'https://calendar.google.com/calendar/ical/i4rquq7ujj528bstfbk1dviebs%40' + \
-    #          'group.calendar.google.com/private-f2a98c8b20e8791bee32b1504881baf9/basic.ics'
+
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('calendar', 'v3', http=http)
     # test_event = service.events().insert(calendarId= cal_id, sendNotifications= True, body=test_event).execute()
-    test_event = service.events().insert(calendarId='primary', sendNotifications= True, body=test_event).execute()
-    print('Test Event created: %s' % (test_event.get('htmlLink')))
+#    calendarId='primary'
+    TestCalendarId='mathnasium.com_bq9ie5c7fpmep6a8n4jhcbpj3k@group.calendar.google.com'
+    calendarIds = [TestCalendarId]
+    for id in calendarIds:
+        test_event = service.events().insert(calendarId=id, sendNotifications= True, body=test_event).execute()
+        print('Test Event created: %s' % (test_event.get('htmlLink')))
     return credentials
 
 def main():
@@ -117,7 +117,7 @@ def main():
         start = event['start'].get('dateTime', event['start'].get('date'))
         print(start, event['summary'])
 
-#    test_event = schedule_test_event(service)
+    test_event = schedule_test_event(service, credentials)
 
 
 if __name__ == '__main__':
